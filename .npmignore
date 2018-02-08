@@ -55,7 +55,7 @@ project.xcworkspace
 
 # Android/IJ
 #
-react-native-unity-view.iml
+react-native-dialogs.iml
 .idea
 .gradle
 local.properties
@@ -66,4 +66,7 @@ android/*.iml
 /android/.classpath
 /android/.project
 /android/.settings
-/out
+
+tsconfig.json
+*.js.map
+/src

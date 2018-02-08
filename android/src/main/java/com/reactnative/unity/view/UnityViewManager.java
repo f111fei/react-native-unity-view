@@ -19,7 +19,7 @@ import com.facebook.react.uimanager.ThemedReactContext;
 public class UnityViewManager extends SimpleViewManager<UnityView> {
     private static final String REACT_CLASS = "UnityView";
 
-    private UnityView view;
+    private static UnityView view;
 
     private ReactApplicationContext context;
 
@@ -100,6 +100,7 @@ public class UnityViewManager extends SimpleViewManager<UnityView> {
         if (view.getParent() != null) {
             ((ViewGroup) view.getParent()).removeView(view);
         }
+        view.windowFocusChanged(true);
         view.requestFocus();
         return view;
     }

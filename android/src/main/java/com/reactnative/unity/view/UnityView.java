@@ -2,6 +2,7 @@ package com.reactnative.unity.view;
 
 import android.content.Context;
 import android.content.res.Configuration;
+import android.view.View;
 
 import com.unity3d.player.UnityPlayer;
 
@@ -10,14 +11,15 @@ import com.unity3d.player.UnityPlayer;
  */
 
 public class UnityView extends UnityPlayer {
-    public UnityView(Context context) {
+
+    protected UnityView(Context context) {
         super(context);
     }
 
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        this.windowFocusChanged(true);
+        this.resume();
     }
 
     @Override
@@ -30,5 +32,10 @@ public class UnityView extends UnityPlayer {
     protected void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         this.configurationChanged(newConfig);
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
     }
 }

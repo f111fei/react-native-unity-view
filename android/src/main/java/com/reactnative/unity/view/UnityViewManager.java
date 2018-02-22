@@ -19,7 +19,7 @@ import com.facebook.react.uimanager.ThemedReactContext;
 public class UnityViewManager extends SimpleViewManager<UnityView> {
     private static final String REACT_CLASS = "UnityView";
 
-    private static UnityView view;
+    private UnityView view;
 
     private ReactApplicationContext context;
 
@@ -38,27 +38,26 @@ public class UnityViewManager extends SimpleViewManager<UnityView> {
         context.addLifecycleEventListener(new LifecycleEventListener() {
             @Override
             public void onHostResume() {
-                if (view == null) {
-                    initUnityView();
-                } else {
-                    view.resume();
+                if (view != null) {
+                    view.getPlayer().resume();
                 }
             }
 
             @Override
             public void onHostPause() {
                 if (view != null) {
-                    view.pause();
+                    view.getPlayer().pause();
                 }
             }
 
             @Override
             public void onHostDestroy() {
                 if (view != null) {
-                    view.quit();
+                    view.getPlayer().quit();
                 }
             }
         });
+
         context.addActivityEventListener(new ActivityEventListener() {
             @Override
             public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent data) {
@@ -66,42 +65,15 @@ public class UnityViewManager extends SimpleViewManager<UnityView> {
 
             @Override
             public void onNewIntent(Intent intent) {
-                if (view == null) {
-                    initUnityView();
-                }
+                context.getCurrentActivity().getWindow().setFormat(PixelFormat.RGBA_8888);
             }
         });
     }
 
-    private UnityView initUnityView() {
-        final Activity activity = context.getCurrentActivity();
-        if (Looper.myLooper() == Looper.getMainLooper()) {
-            view = new UnityView(activity);
-            activity.getWindow().setFormat(PixelFormat.RGBA_8888);
-            return view;
-        } else {
-            activity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    view = new UnityView(activity);
-                    view.resume();
-                    activity.getWindow().setFormat(PixelFormat.RGBA_8888);
-                }
-            });
-            return null;
-        }
-    }
-
     @Override
     protected UnityView createViewInstance(ThemedReactContext reactContext) {
-        if (view == null) {
-            view = initUnityView();
-        }
-        if (view.getParent() != null) {
-            ((ViewGroup) view.getParent()).removeView(view);
-        }
-        view.windowFocusChanged(true);
-        view.requestFocus();
+        Activity activity = reactContext.getCurrentActivity();
+        view = new UnityView(activity);
         return view;
     }
 }

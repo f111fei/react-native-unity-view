@@ -3,6 +3,7 @@ package com.reactnative.unity.view;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 
@@ -27,6 +28,7 @@ public class UnityView extends FrameLayout {
                 fullScreen = true;
             }
             unityPlayer = new UnityPlayer(context);
+            // restore window layout
             if (!fullScreen) {
                 activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
                 activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -49,6 +51,9 @@ public class UnityView extends FrameLayout {
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
+        if (view.getParent() != null) {
+            ((ViewGroup)view.getParent()).removeView(view);
+        }
         addView(view, MATCH_PARENT, MATCH_PARENT);
         view.windowFocusChanged(true);
         view.requestFocus();
@@ -69,10 +74,9 @@ public class UnityView extends FrameLayout {
 
     @Override
     protected void onDetachedFromWindow() {
+        view.windowFocusChanged(false);
         view.pause();
         removeView(view);
-        view.windowFocusChanged(false);
-        view.clearFocus();
         super.onDetachedFromWindow();
     }
 }

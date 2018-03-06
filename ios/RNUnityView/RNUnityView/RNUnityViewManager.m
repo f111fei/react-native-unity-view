@@ -16,12 +16,6 @@
 
 RCT_EXPORT_MODULE(UnityView)
 
-- (id)init {
-    self = [super init];
-    unity_init();
-    return self;
-}
-
 - (UIView *)view
 {
     return [[RNUnityView alloc] init];
@@ -32,7 +26,12 @@ RCT_EXPORT_MODULE(UnityView)
     return dispatch_get_main_queue();
 }
 
--(void)listenAppState
++ (BOOL)requiresMainQueueSetup
+{
+    return YES;
+}
+
++ (void)listenAppState
 {
     for (NSString *name in @[UIApplicationDidBecomeActiveNotification,
                              UIApplicationDidEnterBackgroundNotification,
@@ -47,7 +46,7 @@ RCT_EXPORT_MODULE(UnityView)
     }
 }
 
-- (void)handleAppStateDidChange:(NSNotification *)notification
++ (void)handleAppStateDidChange:(NSNotification *)notification
 {
     UnityAppController* unityAppController = GetAppController();
     
@@ -68,12 +67,16 @@ RCT_EXPORT_MODULE(UnityView)
 
 - (void)setBridge:(RCTBridge *)bridge {
     _bridge = bridge;
-    UIApplication* application = [UIApplication sharedApplication];
-    UnityAppController *controller = GetAppController();
-    UIWindow* mainWindow = application.keyWindow;
-    [controller application:application didFinishLaunchingWithOptions:bridge.launchOptions];
-    [mainWindow makeKeyAndVisible];
-    [self listenAppState];
+    
+    if (!unity_inited) {
+        unity_init();
+        UIApplication* application = [UIApplication sharedApplication];
+        UnityAppController *controller = GetAppController();
+        UIWindow* mainWindow = application.keyWindow;
+        [controller application:application didFinishLaunchingWithOptions:bridge.launchOptions];
+        [mainWindow makeKeyAndVisible];
+        [RNUnityViewManager listenAppState];
+    }
 }
 
 @end

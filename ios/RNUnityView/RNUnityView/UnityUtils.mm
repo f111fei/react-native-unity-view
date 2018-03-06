@@ -9,16 +9,25 @@
 // to get this section emitted at right time and so avoid LC_ENCRYPTION_INFO size miscalculation
 static const int constsection = 0;
 
+bool unity_inited = false;
+
 void UnityInitTrampoline();
+
+
 
 extern "C" void unity_init()
 {
+    if (unity_inited) {
+        return;
+    }
+    unity_inited = true;
+    
     @autoreleasepool
     {
         NSProcessInfo *processInfo = [NSProcessInfo processInfo];
         int count= (int)[processInfo.arguments count];
         char** argv = new char*[count];
-        for(int i=0; i<count; i++){
+        for(int i=0; i<count; i++) {
             const char* arg = [processInfo.arguments[i] UTF8String];
             argv[i] = new char[strlen(arg)];
             strcpy(argv[i], arg);

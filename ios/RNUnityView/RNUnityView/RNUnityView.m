@@ -6,20 +6,26 @@
 //  Copyright © 2018年 xzper. All rights reserved.
 //
 
-#import "RCTEventDispatcher.h"
 #import "RNUnityView.h"
 
 @implementation RNUnityView
 
-RCTEventDispatcher *_eventDispatcher;
-
-- (id)initWithEventDispatcher:(RCTEventDispatcher *)eventDispatcher
+-(id)initWithFrame:(CGRect)frame
 {
-    if ((self = [super initWithFrame:CGRectZero])) {
-        _eventDispatcher = eventDispatcher;
-//        [self addSubview:_tabController.view];
+    self = [super initWithFrame:frame];
+    if (self){
+        self.uView = (UIView*)GetAppController().unityView;
     }
     return self;
+}
+
+-(void)layoutSubviews
+{
+    [super layoutSubviews];
+    [self.uView removeFromSuperview];
+    self.uView.frame = self.bounds;
+    [self insertSubview:self.uView atIndex:0];
+    [self.uView setNeedsLayout];
 }
 
 @end

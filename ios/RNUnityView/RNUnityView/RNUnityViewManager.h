@@ -7,5 +7,7 @@
 //
 
 #import  "RCTViewManager.h"
+#import "UnityAppController.h"
+
 @interface RNUnityViewManager : RCTViewManager
 @end

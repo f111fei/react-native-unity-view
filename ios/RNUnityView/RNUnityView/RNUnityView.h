@@ -8,10 +8,10 @@
 
 #import <UIKit/UIKit.h>
 
-@class RCTEventDispatcher;
+#import "UnityAppController.h"
 
 @interface RNUnityView : UIView
 
-- (instancetype)initWithEventDispatcher:(RCTEventDispatcher *)eventDispatcher NS_DESIGNATED_INITIALIZER;
+@property (nonatomic, strong) UIView* uView;
 
 @end

@@ -2,6 +2,7 @@
 #include "RegisterFeatures.h"
 #include <csignal>
 #import <Foundation/Foundation.h>
+#import "UnityInterface.h"
 
 // Hack to work around iOS SDK 4.3 linker problem
 // we need at least one __TEXT, __const section entry in main application .o files

@@ -10,6 +10,7 @@
 		1B3E6D0920402207003ACF42 /* RNUnityView.m in Sources */ = {isa = PBXBuildFile; fileRef = 1B3E6D0820402207003ACF42 /* RNUnityView.m */; };
 		1B3E6D0A20402207003ACF42 /* RNUnityView.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1B3E6D0720402207003ACF42 /* RNUnityView.h */; };
 		1B3E6D9B20402368003ACF42 /* RNUnityViewManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 1B3E6D9A20402368003ACF42 /* RNUnityViewManager.m */; };
+		1B89351A204EB95D00200D9B /* UnityUtils.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1B893519204EB95D00200D9B /* UnityUtils.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -31,6 +32,8 @@
 		1B3E6D0820402207003ACF42 /* RNUnityView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNUnityView.m; sourceTree = "<group>"; };
 		1B3E6D9A20402368003ACF42 /* RNUnityViewManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNUnityViewManager.m; sourceTree = "<group>"; };
 		1B3E6D9C20402375003ACF42 /* RNUnityViewManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RNUnityViewManager.h; sourceTree = "<group>"; };
+		1B893518204EB95D00200D9B /* UnityUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UnityUtils.h; sourceTree = "<group>"; };
+		1B893519204EB95D00200D9B /* UnityUtils.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = UnityUtils.mm; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -67,6 +70,8 @@
 				1B3E6D0820402207003ACF42 /* RNUnityView.m */,
 				1B3E6D9C20402375003ACF42 /* RNUnityViewManager.h */,
 				1B3E6D9A20402368003ACF42 /* RNUnityViewManager.m */,
+				1B893518204EB95D00200D9B /* UnityUtils.h */,
+				1B893519204EB95D00200D9B /* UnityUtils.mm */,
 			);
 			path = RNUnityView;
 			sourceTree = "<group>";
@@ -130,6 +135,7 @@
 			files = (
 				1B3E6D9B20402368003ACF42 /* RNUnityViewManager.m in Sources */,
 				1B3E6D0920402207003ACF42 /* RNUnityView.m in Sources */,
+				1B89351A204EB95D00200D9B /* UnityUtils.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -246,6 +252,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/../../../react-native/React/**",
+					"$(SRCROOT)/../../../../ios/UnityExport/Classes",
+					"$(SRCROOT)/../../../../ios/UnityExport/Classes/Unity",
+					"$(SRCROOT)/../../../../ios/UnityExport/Libraries",
+				);
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -257,6 +269,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/../../../react-native/React/**",
+					"$(SRCROOT)/../../../../ios/UnityExport/Classes",
+					"$(SRCROOT)/../../../../ios/UnityExport/Classes/Unity",
+					"$(SRCROOT)/../../../../ios/UnityExport/Libraries",
+				);
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

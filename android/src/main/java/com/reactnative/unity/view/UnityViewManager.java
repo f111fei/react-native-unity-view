@@ -3,8 +3,6 @@ package com.reactnative.unity.view;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.PixelFormat;
-import android.os.Looper;
-import android.view.ViewGroup;
 
 import com.facebook.react.bridge.ActivityEventListener;
 import com.facebook.react.bridge.LifecycleEventListener;
@@ -18,8 +16,6 @@ import com.facebook.react.uimanager.ThemedReactContext;
 
 public class UnityViewManager extends SimpleViewManager<UnityView> {
     private static final String REACT_CLASS = "UnityView";
-
-    private UnityView view;
 
     private ReactApplicationContext context;
 
@@ -38,23 +34,21 @@ public class UnityViewManager extends SimpleViewManager<UnityView> {
         context.addLifecycleEventListener(new LifecycleEventListener() {
             @Override
             public void onHostResume() {
-                if (view != null) {
-                    view.getPlayer().resume();
+                if (UnityView.getPlayer() == null) {
+                    UnityView.createPlayer(context.getCurrentActivity());
+                } else {
+                    UnityView.getPlayer().resume();
                 }
             }
 
             @Override
             public void onHostPause() {
-                if (view != null) {
-                    view.getPlayer().pause();
-                }
+                UnityView.getPlayer().pause();
             }
 
             @Override
             public void onHostDestroy() {
-                if (view != null) {
-                    view.getPlayer().quit();
-                }
+                UnityView.getPlayer().quit();
             }
         });
 
@@ -65,15 +59,13 @@ public class UnityViewManager extends SimpleViewManager<UnityView> {
 
             @Override
             public void onNewIntent(Intent intent) {
-                context.getCurrentActivity().getWindow().setFormat(PixelFormat.RGBA_8888);
             }
         });
     }
 
     @Override
     protected UnityView createViewInstance(ThemedReactContext reactContext) {
-        Activity activity = reactContext.getCurrentActivity();
-        view = new UnityView(activity);
+        UnityView view = new UnityView(reactContext);
         return view;
     }
 }

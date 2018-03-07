@@ -20,8 +20,8 @@ See [react-native-unity-demo](https://github.com/f111fei/react-native-unity-demo
 ### Add Unity Project
 
 1. Create an unity project, Example: 'Cube'.
-2. Create a folder named `'unity'` in react native project folder.
-2. Move unity project folder to `'unity'` folder.
+2. Create a folder named `unity` in react native project folder.
+2. Move unity project folder to `unity` folder.
 
 Now your project files should look like this.
 
@@ -40,7 +40,7 @@ Now your project files should look like this.
 
 2. Click Menu: File => Build Settings => Player Settings
 
-3. Change `'Product Name'` to Name of the Xcode project, You can find it follow `ios/${XcodeProjectName}.xcodeproj`.
+3. Change `Product Name` to Name of the Xcode project, You can find it follow `ios/${XcodeProjectName}.xcodeproj`.
 
 **IOS Platform**:
 
@@ -98,9 +98,9 @@ dependencies {
 
 1. Open your react native project in XCode.
 
-1. Copy File [`'UnityConfig.xcconfig'`](https://github.com/f111fei/react-native-unity-demo/blob/master/ios/rnunitydemo/UnityConfig.xcconfig) to `ios/${XcodeProjectName}/`.
+1. Copy File [`UnityConfig.xcconfig`](https://github.com/f111fei/react-native-unity-demo/blob/master/ios/rnunitydemo/UnityConfig.xcconfig) to `ios/${XcodeProjectName}/`.
 
-2. Drag `'UnityConfig.xcconfig'` to XCode. Choose `Create folder references`.
+2. Drag `UnityConfig.xcconfig` to XCode. Choose `Create folder references`.
 
 3. Setting `.xcconfig` to project.
 

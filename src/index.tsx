@@ -14,11 +14,17 @@ export default class UnityView extends React.Component<UnityViewProps> {
         ...ViewPropTypes
     }
 
-    public postMessage(gameObject: string, method: string, message: string) {
+    /**
+     * Send Message to Unity.
+     * @param gameObject The Name of GameObject. Also can be a path string.
+     * @param methodName Method name in GameObject instance.
+     * @param message The message will post.
+     */
+    public postMessage(gameObject: string, methodName: string, message: string) {
         UIManager.dispatchViewManagerCommand(
             this.getViewHandle(),
             UIManager.UnityView.Commands.postMessage,
-            [String(gameObject), String(method), String(message)]
+            [String(gameObject), String(methodName), String(message)]
         );
     };
 

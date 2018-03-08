@@ -45,9 +45,9 @@ public class UnityViewManager extends SimpleViewManager<UnityView> implements Li
         switch (commandId) {
             case COMMAND_POST_MESSAGE:
                 String gameObject = args.getString(0);
-                String method = args.getString(1);
+                String methodName = args.getString(1);
                 String message = args.getString(2);
-                UnityUtils.postMessage(gameObject, method, message);
+                UnityUtils.postMessage(gameObject, methodName, message);
                 break;
         }
     }

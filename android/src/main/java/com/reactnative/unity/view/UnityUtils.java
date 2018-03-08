@@ -63,8 +63,8 @@ public class UnityUtils {
         });
     }
 
-    public static void postMessage(String gameObject, String method, String message) {
-        UnityPlayer.UnitySendMessage(gameObject, method, message);
+    public static void postMessage(String gameObject, String methodName, String message) {
+        UnityPlayer.UnitySendMessage(gameObject, methodName, message);
     }
 
     public static void addUnityViewToBackground() {

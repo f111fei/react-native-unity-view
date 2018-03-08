@@ -79,9 +79,9 @@ RCT_EXPORT_MODULE(UnityView)
     }
 }
 
-RCT_EXPORT_METHOD(postMessage:(nonnull NSNumber *)reactTag gameObject:(NSString *)gameObject method:(NSString *)method message:(NSString *)message)
+RCT_EXPORT_METHOD(postMessage:(nonnull NSNumber *)reactTag gameObject:(NSString *)gameObject methodName:(NSString *)methodName message:(NSString *)message)
 {
-    UnityPostMessage(gameObject, method, message);
+    UnityPostMessage(gameObject, methodName, message);
 }
 
 @end

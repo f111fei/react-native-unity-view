@@ -63,6 +63,10 @@ public class UnityUtils {
         });
     }
 
+    public static void postMessage(String gameObject, String method, String message) {
+        UnityPlayer.UnitySendMessage(gameObject, method, message);
+    }
+
     public static void addUnityViewToBackground() {
         if (unityPlayer.getParent() != null) {
             ((ViewGroup)unityPlayer.getParent()).removeView(unityPlayer);

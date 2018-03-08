@@ -19,68 +19,17 @@ import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 
 public class UnityView extends FrameLayout {
 
-    private static UnityPlayer unityPlayer;
-
-    public static UnityPlayer getPlayer() {
-        return unityPlayer;
-    }
-
-    public static void createPlayer(Context context) {
-        if (unityPlayer != null) {
-            return;
-        }
-        final Activity activity = ((Activity)context);
-        activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                activity.getWindow().setFormat(PixelFormat.RGBA_8888);
-                int flag = activity.getWindow().getAttributes().flags;
-                boolean fullScreen = false;
-                if((flag & WindowManager.LayoutParams.FLAG_FULLSCREEN) == WindowManager.LayoutParams.FLAG_FULLSCREEN) {
-                    fullScreen = true;
-                }
-
-                unityPlayer = new UnityPlayer(activity);
-
-                // start unity
-                ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(1, 1);
-                activity.addContentView(unityPlayer, layoutParams);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    unityPlayer.setZ(-1f);
-                }
-                try {
-                    unityPlayer.windowFocusChanged(true);
-                    unityPlayer.requestFocus();
-                    unityPlayer.resume();
-                } catch (Exception e) {
-                }
-
-                // restore window layout
-                if (!fullScreen) {
-                    activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
-                    activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-                }
-            }
-        });
-    }
-
     private UnityPlayer view;
 
-    protected UnityView(Context context) {
+    protected UnityView(Context context, UnityPlayer view) {
         super(context);
-        this.view = getPlayer();
+        this.view = view;
     }
 
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        if (view.getParent() != null) {
-            ((ViewGroup)view.getParent()).removeView(view);
-        }
-        addView(view, MATCH_PARENT, MATCH_PARENT);
-        view.windowFocusChanged(true);
-        view.requestFocus();
-        view.resume();
+        UnityUtils.addUnityViewToGroup(this);
     }
 
     @Override
@@ -97,10 +46,7 @@ public class UnityView extends FrameLayout {
 
     @Override
     protected void onDetachedFromWindow() {
-        view.windowFocusChanged(false);
-        // Don`t pause unity, when unity view is hide.
-//        view.pause();
-        removeView(view);
+        UnityUtils.addUnityViewToBackground();
         super.onDetachedFromWindow();
     }
 }

@@ -8,7 +8,7 @@ See [react-native-unity-demo](https://github.com/f111fei/react-native-unity-demo
 
 ## Preview
 
-![gif](https://user-images.githubusercontent.com/7069719/35962773-9623cf56-0ced-11e8-94aa-b93a35a39800.gif)
+![gif](https://user-images.githubusercontent.com/7069719/37143096-12be6810-22f5-11e8-89d8-562e9213072e.gif)
 
 ## How to use
 

@@ -1,23 +1,20 @@
 package com.reactnative.unity.view;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
-import android.graphics.PixelFormat;
-import android.os.Build;
-import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.FrameLayout;
 
+import com.facebook.react.bridge.ReactContext;
+import com.facebook.react.uimanager.UIManagerModule;
+import com.facebook.react.uimanager.events.Event;
+import com.facebook.react.uimanager.events.EventDispatcher;
 import com.unity3d.player.UnityPlayer;
-
-import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 
 /**
  * Created by xzper on 2018-02-07.
  */
 
-public class UnityView extends FrameLayout {
+public class UnityView extends FrameLayout implements UnityEventListener {
 
     private UnityPlayer view;
 
@@ -48,5 +45,17 @@ public class UnityView extends FrameLayout {
     protected void onDetachedFromWindow() {
         UnityUtils.addUnityViewToBackground();
         super.onDetachedFromWindow();
+    }
+
+    @Override
+    public void onMessage(String message) {
+        dispatchEvent(this, new UnityMessageEvent(this.getId(), message));
+    }
+
+    protected static void dispatchEvent(UnityView view, Event event) {
+        ReactContext reactContext = (ReactContext) view.getContext();
+        EventDispatcher eventDispatcher =
+                reactContext.getNativeModule(UIManagerModule.class).getEventDispatcher();
+        eventDispatcher.dispatchEvent(event);
     }
 }

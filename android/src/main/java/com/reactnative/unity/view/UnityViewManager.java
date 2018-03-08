@@ -55,7 +55,21 @@ public class UnityViewManager extends SimpleViewManager<UnityView> implements Li
     @Override
     protected UnityView createViewInstance(ThemedReactContext reactContext) {
         UnityView view = new UnityView(reactContext, UnityUtils.getPlayer());
+        UnityUtils.addUnityEventListener(view);
         return view;
+    }
+
+    @Override
+    public void onDropViewInstance(UnityView view) {
+        UnityUtils.removeUnityEventListener(view);
+        super.onDropViewInstance(view);
+    }
+
+    @Override
+    public @Nullable Map getExportedCustomDirectEventTypeConstants() {
+        return MapBuilder.of(
+                UnityMessageEvent.EVENT_NAME, MapBuilder.of("registrationName", "onMessage")
+        );
     }
 
     @Override

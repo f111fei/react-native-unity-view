@@ -14,8 +14,11 @@ See [react-native-unity-demo](https://github.com/f111fei/react-native-unity-demo
 
 ### Install
 
-    npm install react-native-unity-view --save
-    react-native link react-native-unity-view
+```
+npm install react-native-unity-view --save
+
+react-native link react-native-unity-view
+```
 
 ### Add Unity Project
 
@@ -25,14 +28,16 @@ See [react-native-unity-demo](https://github.com/f111fei/react-native-unity-demo
 
 Now your project files should look like this.
 
-    .
-    ├── android
-    ├── ios
-    ├── unity
-    │   └── <Your Unity Project>    // Example: Cube
-    ├── node_modules
-    ├── package.json
-    ├── README.md
+```
+.
+├── android
+├── ios
+├── unity
+│   └── <Your Unity Project>    // Example: Cube
+├── node_modules
+├── package.json
+├── README.md
+```
 
 ### Configure Player Settings
 
@@ -107,6 +112,56 @@ dependencies {
 ![image](https://user-images.githubusercontent.com/7069719/37093471-638b7810-224a-11e8-8263-b9882f707c15.png)
 
 ### Use In React Native
+
+#### Methods
+
+##### `postMessage(gameObject: string, methodName: string, message: string)`
+
+Send message to unity.
+
+* `gameObject` The Name of GameObject. Also can be a path string.
+* `methodName` Method name in GameObject instance.
+* `message` The message will post.
+
+Example:
+
+1. Add a message handle method in `MonoBehaviour`.
+
+```
+public class Rotate : MonoBehaviour {
+    void handleMessage(string message) {
+		Debug.Log("onMessage:" + message);
+	}
+}
+```
+
+2. Add Unity component to a GameObject.
+
+2. Send message use javascript.
+
+```
+onToggleRotate() {
+    if (this.unity) {
+      // gameobject param also can be 'Cube'.
+      this.unity.postMessage('GameObject/Cube', 'toggleRotate', 'message');
+    }
+}
+
+render() {
+    return (
+        <View style={[styles.container]}>
+            <UnityView
+                ref={(ref) => this.unity = ref}
+                style={style.unity}
+            />
+            <Button label="Toggle Rotate" onPress={this.onToggleRotate.bind(this)} />
+        </View>
+    );
+}
+
+```
+
+#### Example Code
 
 ```
 import React from 'react';

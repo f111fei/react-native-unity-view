@@ -7,4 +7,6 @@ bool unity_inited;
 
 void unity_init(void);
 
+void UnityPostMessage(NSString* gameObject, NSString* methodName, NSString* message);
+
 #endif /* UnityUtils_h */

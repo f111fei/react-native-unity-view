@@ -53,3 +53,7 @@ extern "C" void unity_init()
     }
 }
 
+extern "C" void UnityPostMessage(NSString* gameObject, NSString* methodName, NSString* message)
+{
+    UnitySendMessage([gameObject UTF8String], [methodName UTF8String], [message UTF8String]);
+}

@@ -7,37 +7,35 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1B3E6D0920402207003ACF42 /* RNUnityView.m in Sources */ = {isa = PBXBuildFile; fileRef = 1B3E6D0820402207003ACF42 /* RNUnityView.m */; };
-		1B3E6D0A20402207003ACF42 /* RNUnityView.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1B3E6D0720402207003ACF42 /* RNUnityView.h */; };
-		1B3E6D9B20402368003ACF42 /* RNUnityViewManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 1B3E6D9A20402368003ACF42 /* RNUnityViewManager.m */; };
-		1B89351A204EB95D00200D9B /* UnityUtils.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1B893519204EB95D00200D9B /* UnityUtils.mm */; };
+		1B593B7D2052A50D00CBB34F /* RNUnityViewManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 1B593B772052A50C00CBB34F /* RNUnityViewManager.m */; };
+		1B593B7E2052A50D00CBB34F /* UnityUtils.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1B593B792052A50C00CBB34F /* UnityUtils.mm */; };
+		1B593B7F2052A50D00CBB34F /* RNUnityView.m in Sources */ = {isa = PBXBuildFile; fileRef = 1B593B7A2052A50C00CBB34F /* RNUnityView.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		1B3E6D0220402207003ACF42 /* CopyFiles */ = {
+		1B593B5D2052A47600CBB34F /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "include/$(PRODUCT_NAME)";
 			dstSubfolderSpec = 16;
 			files = (
-				1B3E6D0A20402207003ACF42 /* RNUnityView.h in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		1B3E6D0420402207003ACF42 /* libRNUnityView.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libRNUnityView.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		1B3E6D0720402207003ACF42 /* RNUnityView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RNUnityView.h; sourceTree = "<group>"; };
-		1B3E6D0820402207003ACF42 /* RNUnityView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNUnityView.m; sourceTree = "<group>"; };
-		1B3E6D9A20402368003ACF42 /* RNUnityViewManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNUnityViewManager.m; sourceTree = "<group>"; };
-		1B3E6D9C20402375003ACF42 /* RNUnityViewManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RNUnityViewManager.h; sourceTree = "<group>"; };
-		1B893518204EB95D00200D9B /* UnityUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UnityUtils.h; sourceTree = "<group>"; };
-		1B893519204EB95D00200D9B /* UnityUtils.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = UnityUtils.mm; sourceTree = "<group>"; };
+		1B593B5F2052A47600CBB34F /* libRNUnityView.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libRNUnityView.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		1B593B772052A50C00CBB34F /* RNUnityViewManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RNUnityViewManager.m; sourceTree = "<group>"; };
+		1B593B782052A50C00CBB34F /* RNUnityView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RNUnityView.h; sourceTree = "<group>"; };
+		1B593B792052A50C00CBB34F /* UnityUtils.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = UnityUtils.mm; sourceTree = "<group>"; };
+		1B593B7A2052A50C00CBB34F /* RNUnityView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RNUnityView.m; sourceTree = "<group>"; };
+		1B593B7B2052A50D00CBB34F /* RNUnityViewManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RNUnityViewManager.h; sourceTree = "<group>"; };
+		1B593B7C2052A50D00CBB34F /* UnityUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UnityUtils.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		1B3E6D0120402207003ACF42 /* Frameworks */ = {
+		1B593B5C2052A47600CBB34F /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -47,45 +45,37 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		1B3E6CFB20402207003ACF42 = {
+		1B593B562052A47600CBB34F = {
 			isa = PBXGroup;
 			children = (
-				1B3E6D0620402207003ACF42 /* RNUnityView */,
-				1B3E6D0520402207003ACF42 /* Products */,
+				1B593B782052A50C00CBB34F /* RNUnityView.h */,
+				1B593B7A2052A50C00CBB34F /* RNUnityView.m */,
+				1B593B7B2052A50D00CBB34F /* RNUnityViewManager.h */,
+				1B593B772052A50C00CBB34F /* RNUnityViewManager.m */,
+				1B593B7C2052A50D00CBB34F /* UnityUtils.h */,
+				1B593B792052A50C00CBB34F /* UnityUtils.mm */,
+				1B593B602052A47600CBB34F /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		1B3E6D0520402207003ACF42 /* Products */ = {
+		1B593B602052A47600CBB34F /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				1B3E6D0420402207003ACF42 /* libRNUnityView.a */,
+				1B593B5F2052A47600CBB34F /* libRNUnityView.a */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		1B3E6D0620402207003ACF42 /* RNUnityView */ = {
-			isa = PBXGroup;
-			children = (
-				1B3E6D0720402207003ACF42 /* RNUnityView.h */,
-				1B3E6D0820402207003ACF42 /* RNUnityView.m */,
-				1B3E6D9C20402375003ACF42 /* RNUnityViewManager.h */,
-				1B3E6D9A20402368003ACF42 /* RNUnityViewManager.m */,
-				1B893518204EB95D00200D9B /* UnityUtils.h */,
-				1B893519204EB95D00200D9B /* UnityUtils.mm */,
-			);
-			path = RNUnityView;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		1B3E6D0320402207003ACF42 /* RNUnityView */ = {
+		1B593B5E2052A47600CBB34F /* RNUnityView */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 1B3E6D0D20402207003ACF42 /* Build configuration list for PBXNativeTarget "RNUnityView" */;
+			buildConfigurationList = 1B593B682052A47600CBB34F /* Build configuration list for PBXNativeTarget "RNUnityView" */;
 			buildPhases = (
-				1B3E6D0020402207003ACF42 /* Sources */,
-				1B3E6D0120402207003ACF42 /* Frameworks */,
-				1B3E6D0220402207003ACF42 /* CopyFiles */,
+				1B593B5B2052A47600CBB34F /* Sources */,
+				1B593B5C2052A47600CBB34F /* Frameworks */,
+				1B593B5D2052A47600CBB34F /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -93,56 +83,56 @@
 			);
 			name = RNUnityView;
 			productName = RNUnityView;
-			productReference = 1B3E6D0420402207003ACF42 /* libRNUnityView.a */;
+			productReference = 1B593B5F2052A47600CBB34F /* libRNUnityView.a */;
 			productType = "com.apple.product-type.library.static";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		1B3E6CFC20402207003ACF42 /* Project object */ = {
+		1B593B572052A47600CBB34F /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				LastUpgradeCheck = 0920;
 				ORGANIZATIONNAME = xzper;
 				TargetAttributes = {
-					1B3E6D0320402207003ACF42 = {
+					1B593B5E2052A47600CBB34F = {
 						CreatedOnToolsVersion = 9.2;
 						ProvisioningStyle = Automatic;
 					};
 				};
 			};
-			buildConfigurationList = 1B3E6CFF20402207003ACF42 /* Build configuration list for PBXProject "RNUnityView" */;
+			buildConfigurationList = 1B593B5A2052A47600CBB34F /* Build configuration list for PBXProject "RNUnityView" */;
 			compatibilityVersion = "Xcode 8.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 			);
-			mainGroup = 1B3E6CFB20402207003ACF42;
-			productRefGroup = 1B3E6D0520402207003ACF42 /* Products */;
+			mainGroup = 1B593B562052A47600CBB34F;
+			productRefGroup = 1B593B602052A47600CBB34F /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				1B3E6D0320402207003ACF42 /* RNUnityView */,
+				1B593B5E2052A47600CBB34F /* RNUnityView */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
-		1B3E6D0020402207003ACF42 /* Sources */ = {
+		1B593B5B2052A47600CBB34F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1B3E6D9B20402368003ACF42 /* RNUnityViewManager.m in Sources */,
-				1B3E6D0920402207003ACF42 /* RNUnityView.m in Sources */,
-				1B89351A204EB95D00200D9B /* UnityUtils.mm in Sources */,
+				1B593B7D2052A50D00CBB34F /* RNUnityViewManager.m in Sources */,
+				1B593B7F2052A50D00CBB34F /* RNUnityView.m in Sources */,
+				1B593B7E2052A50D00CBB34F /* UnityUtils.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		1B3E6D0B20402207003ACF42 /* Debug */ = {
+		1B593B662052A47600CBB34F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -190,15 +180,14 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = "$(SRCROOT)/../../../react-native/React/**";
-				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.2;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 			};
 			name = Debug;
 		};
-		1B3E6D0C20402207003ACF42 /* Release */ = {
+		1B593B672052A47600CBB34F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -240,23 +229,22 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = "$(SRCROOT)/../../../react-native/React/**";
-				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.2;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
-		1B3E6D0E20402207003ACF42 /* Debug */ = {
+		1B593B692052A47600CBB34F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				HEADER_SEARCH_PATHS = (
-					"$(SRCROOT)/../../../react-native/React/**",
-					"$(SRCROOT)/../../../../ios/UnityExport/Classes",
-					"$(SRCROOT)/../../../../ios/UnityExport/Classes/Unity",
-					"$(SRCROOT)/../../../../ios/UnityExport/Libraries",
+					"$(SRCROOT)/../../react-native/React/**",
+					"$(SRCROOT)/../../../ios/UnityExport/Classes",
+					"$(SRCROOT)/../../../ios/UnityExport/Classes/Unity",
+					"$(SRCROOT)/../../../ios/UnityExport/Libraries",
 				);
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -265,15 +253,15 @@
 			};
 			name = Debug;
 		};
-		1B3E6D0F20402207003ACF42 /* Release */ = {
+		1B593B6A2052A47600CBB34F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				HEADER_SEARCH_PATHS = (
-					"$(SRCROOT)/../../../react-native/React/**",
-					"$(SRCROOT)/../../../../ios/UnityExport/Classes",
-					"$(SRCROOT)/../../../../ios/UnityExport/Classes/Unity",
-					"$(SRCROOT)/../../../../ios/UnityExport/Libraries",
+					"$(SRCROOT)/../../react-native/React/**",
+					"$(SRCROOT)/../../../ios/UnityExport/Classes",
+					"$(SRCROOT)/../../../ios/UnityExport/Classes/Unity",
+					"$(SRCROOT)/../../../ios/UnityExport/Libraries",
 				);
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -285,25 +273,25 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		1B3E6CFF20402207003ACF42 /* Build configuration list for PBXProject "RNUnityView" */ = {
+		1B593B5A2052A47600CBB34F /* Build configuration list for PBXProject "RNUnityView" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				1B3E6D0B20402207003ACF42 /* Debug */,
-				1B3E6D0C20402207003ACF42 /* Release */,
+				1B593B662052A47600CBB34F /* Debug */,
+				1B593B672052A47600CBB34F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		1B3E6D0D20402207003ACF42 /* Build configuration list for PBXNativeTarget "RNUnityView" */ = {
+		1B593B682052A47600CBB34F /* Build configuration list for PBXNativeTarget "RNUnityView" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				1B3E6D0E20402207003ACF42 /* Debug */,
-				1B3E6D0F20402207003ACF42 /* Release */,
+				1B593B692052A47600CBB34F /* Debug */,
+				1B593B6A2052A47600CBB34F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = 1B3E6CFC20402207003ACF42 /* Project object */;
+	rootObject = 1B593B572052A47600CBB34F /* Project object */;
 }

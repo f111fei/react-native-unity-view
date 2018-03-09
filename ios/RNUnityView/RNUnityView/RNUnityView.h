@@ -7,11 +7,15 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <React/UIView+React.h>
 
 #import "UnityAppController.h"
+#import "UnityUtils.h"
 
-@interface RNUnityView : UIView
+@interface RNUnityView : UIView<UnityEventListener>
 
 @property (nonatomic, strong) UIView* uView;
+
+@property (nonatomic, copy) RCTDirectEventBlock onMessage;
 
 @end

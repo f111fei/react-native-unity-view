@@ -8,13 +8,13 @@
 
 #import "RNUnityViewManager.h"
 #import "RNUnityView.h"
-#import "UnityUtils.h"
 
 @implementation RNUnityViewManager
 
 @synthesize bridge = _bridge;
 
 RCT_EXPORT_MODULE(UnityView)
+RCT_EXPORT_VIEW_PROPERTY(onMessage, RCTDirectEventBlock)
 
 - (UIView *)view
 {
@@ -68,8 +68,8 @@ RCT_EXPORT_MODULE(UnityView)
 - (void)setBridge:(RCTBridge *)bridge {
     _bridge = bridge;
     
-    if (!unity_inited) {
-        unity_init();
+    if (!UnityIsInited()) {
+        InitUnity();
         UIApplication* application = [UIApplication sharedApplication];
         UnityAppController *controller = GetAppController();
         UIWindow* mainWindow = application.keyWindow;

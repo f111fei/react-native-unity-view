@@ -6,8 +6,10 @@
 //  Copyright © 2018年 xzper. All rights reserved.
 //
 
-#import  "RCTViewManager.h"
+#import "RCTViewManager.h"
 #import "UnityAppController.h"
+#import "UnityUtils.h"
 
 @interface RNUnityViewManager : RCTViewManager
+
 @end

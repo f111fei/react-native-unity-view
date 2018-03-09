@@ -3,6 +3,7 @@
 #include <csignal>
 #import <Foundation/Foundation.h>
 #import "UnityInterface.h"
+#import "UnityUtils.h"
 
 // Hack to work around iOS SDK 4.3 linker problem
 // we need at least one __TEXT, __const section entry in main application .o files
@@ -13,9 +14,12 @@ bool unity_inited = false;
 
 void UnityInitTrampoline();
 
+extern "C" bool UnityIsInited()
+{
+    return unity_inited;
+}
 
-
-extern "C" void unity_init()
+extern "C" void InitUnity()
 {
     if (unity_inited) {
         return;
@@ -57,3 +61,26 @@ extern "C" void UnityPostMessage(NSString* gameObject, NSString* methodName, NSS
 {
     UnitySendMessage([gameObject UTF8String], [methodName UTF8String], [message UTF8String]);
 }
+
+@implementation UnityUtils
+
+static NSHashTable* mUnityEventListeners = [NSHashTable weakObjectsHashTable];
+
+extern "C" void onUnityMessage(const char* message)
+{
+    for (id<UnityEventListener> listener in mUnityEventListeners) {
+        [listener onMessage:[NSString stringWithUTF8String:message]];
+    }
+}
+
++ (void)addUnityEventListener:(id<UnityEventListener>)listener
+{
+    [mUnityEventListeners addObject:listener];
+}
+
++ (void)removeUnityEventListener:(id<UnityEventListener>)listener
+{
+    [mUnityEventListeners removeObject:listener];
+}
+
+@end

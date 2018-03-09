@@ -113,6 +113,41 @@ dependencies {
 
 ### Use In React Native
 
+#### Props
+
+##### `onMessage`
+
+Receive message from unity.
+
+Please copy [`UnityMessageUtils.cs`](https://github.com/f111fei/react-native-unity-demo/blob/master/unity/Cube/Assets/Scripts/UnityMessageUtils.cs) to your unity project and rebuild first.
+
+Example:
+
+1. Send Message use C#.
+
+```
+UnityMessageUtils.SendMessageToRN("click");
+```
+
+2. Receive Message in javascript
+
+```
+onMessage(event) {
+    console.log('OnUnityMessage: ' + event.nativeEvent.message);    // OnUnityMessage: click
+}
+
+render() {
+    return (
+        <View style={[styles.container]}>
+            <UnityView
+                style={style.unity}
+                onMessage={this.onMessage.bind(this)}
+            />
+        </View>
+    );
+}
+```
+
 #### Methods
 
 ##### `postMessage(gameObject: string, methodName: string, message: string)`

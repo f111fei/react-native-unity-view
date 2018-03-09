@@ -12,6 +12,9 @@ export interface UnityViewMessageEventData {
 }
 
 export interface UnityViewProps extends ViewProperties {
+    /** 
+     * Receive message from unity. 
+     */
     onMessage?: (event: NativeSyntheticEvent<UnityViewMessageEventData>) => void;
 }
 

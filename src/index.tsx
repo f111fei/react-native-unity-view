@@ -38,6 +38,14 @@ export default class UnityView extends React.Component<UnityViewProps> {
         );
     };
 
+    /**
+     * Send Message to UnityMessageManager.
+     * @param message The message will post.
+     */
+    public postMessageToUnityManager(message: string) {
+        this.postMessage('UnityMessageManager', 'onMessage', message);
+    };
+
     private getViewHandle() {
         return findNodeHandle(this.refs[UNITY_VIEW_REF] as any);
     }

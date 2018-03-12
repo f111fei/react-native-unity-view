@@ -119,14 +119,14 @@ dependencies {
 
 Receive message from unity.
 
-Please copy [`UnityMessageUtils.cs`](https://github.com/f111fei/react-native-unity-demo/blob/master/unity/Cube/Assets/Scripts/UnityMessageUtils.cs) to your unity project and rebuild first.
+Please copy [`UnityMessageManager.cs`](https://github.com/f111fei/react-native-unity-demo/blob/master/unity/Cube/Assets/Scripts/UnityMessageManager.cs) to your unity project and rebuild first.
 
 Example:
 
 1. Send Message use C#.
 
 ```
-UnityMessageUtils.SendMessageToRN("click");
+UnityMessageManager.Instance.SendMessageToRN("click");
 ```
 
 2. Receive Message in javascript

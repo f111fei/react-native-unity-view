@@ -111,6 +111,10 @@ dependencies {
 
 ![image](https://user-images.githubusercontent.com/7069719/37093471-638b7810-224a-11e8-8263-b9882f707c15.png)
 
+4. Go to Targets => Build Settings. Change `Dead Code Stripping` to `YES`.
+
+![image](https://user-images.githubusercontent.com/7069719/37325486-182c7bd4-26c9-11e8-9fc0-8e1a149d30b2.png)
+
 ### Use In React Native
 
 #### Props

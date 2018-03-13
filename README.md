@@ -172,7 +172,7 @@ public class Rotate : MonoBehaviour {
 
 2. Add Unity component to a GameObject.
 
-2. Send message use javascript.
+3. Send message use javascript.
 
 ```
 onToggleRotate() {
@@ -194,6 +194,62 @@ render() {
     );
 }
 
+```
+
+##### `postMessageToUnityManager(message: string)`
+
+Send message to `UnityMessageManager`.
+
+Please copy [`UnityMessageManager.cs`](https://github.com/f111fei/react-native-unity-demo/blob/master/unity/Cube/Assets/Scripts/UnityMessageManager.cs) to your unity project and rebuild first.
+
+Same to `postMessage('UnityMessageManager', 'onMessage', message)`
+
+This is recommended to use.
+
+* `message` The message will post.
+
+Example:
+
+1. Add a message handle method in C#.
+
+```
+void Awake()
+{
+    UnityMessageManager.Instance.OnMessage += toggleRotate;
+}
+
+void onDestroy()
+{
+    UnityMessageManager.Instance.OnMessage -= toggleRotate;
+}
+
+void toggleRotate(string message)
+{
+    Debug.Log("onMessage:" + message);
+    canRotate = !canRotate;
+}
+```
+
+2. Send message use javascript.
+
+```
+onToggleRotate() {
+    if (this.unity) {
+      this.unity.postMessageToUnityManager('message');
+    }
+}
+
+render() {
+    return (
+        <View style={[styles.container]}>
+            <UnityView
+                ref={(ref) => this.unity = ref}
+                style={style.unity}
+            />
+            <Button label="Toggle Rotate" onPress={this.onToggleRotate.bind(this)} />
+        </View>
+    );
+}
 ```
 
 #### Example Code

@@ -84,4 +84,14 @@ RCT_EXPORT_METHOD(postMessage:(nonnull NSNumber *)reactTag gameObject:(NSString 
     UnityPostMessage(gameObject, methodName, message);
 }
 
+RCT_EXPORT_METHOD(pause:(nonnull NSNumber *)reactTag)
+{
+    UnityPauseCommand();
+}
+
+RCT_EXPORT_METHOD(resume:(nonnull NSNumber *)reactTag)
+{
+    UnityResumeCommand();
+}
+
 @end

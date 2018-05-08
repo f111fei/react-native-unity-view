@@ -13,6 +13,10 @@ void InitUnity(void);
 
 void UnityPostMessage(NSString* gameObject, NSString* methodName, NSString* message);
 
+void UnityPauseCommand();
+
+void UnityResumeCommand();
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

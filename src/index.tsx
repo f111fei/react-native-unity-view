@@ -39,6 +39,28 @@ export default class UnityView extends React.Component<UnityViewProps> {
     };
 
     /**
+     * Pause the unity player
+     */
+    public pause() {
+        UIManager.dispatchViewManagerCommand(
+            this.getViewHandle(),
+            UIManager.UnityView.Commands.pause,
+            []
+        );
+    };
+
+    /**
+     * Resume the unity player
+     */
+    public resume() {
+        UIManager.dispatchViewManagerCommand(
+            this.getViewHandle(),
+            UIManager.UnityView.Commands.resume,
+            []
+        );
+    };
+
+    /**
      * Send Message to UnityMessageManager.
      * @param message The message will post.
      */

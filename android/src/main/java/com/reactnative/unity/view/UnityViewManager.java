@@ -19,6 +19,8 @@ public class UnityViewManager extends SimpleViewManager<UnityView> implements Li
     private static final String REACT_CLASS = "UnityView";
 
     public static final int COMMAND_POST_MESSAGE = 1;
+    public static final int COMMAND_PAUSE = 2;
+    public static final int COMMAND_RESUME = 3;
 
     private ReactApplicationContext context;
 
@@ -36,7 +38,9 @@ public class UnityViewManager extends SimpleViewManager<UnityView> implements Li
     @Override
     public @Nullable Map<String, Integer> getCommandsMap() {
         return MapBuilder.of(
-                "postMessage", COMMAND_POST_MESSAGE
+                "postMessage", COMMAND_POST_MESSAGE,
+                "pause", COMMAND_PAUSE,
+                "resume", COMMAND_RESUME
         );
     }
 
@@ -49,6 +53,12 @@ public class UnityViewManager extends SimpleViewManager<UnityView> implements Li
                 String message = args.getString(2);
                 UnityUtils.postMessage(gameObject, methodName, message);
                 break;
+            case COMMAND_PAUSE:
+                UnityUtils.getPlayer().pause();
+                break;
+            case COMMAND_RESUME:
+                UnityUtils.getPlayer().resume();
+                break;                
         }
     }
 

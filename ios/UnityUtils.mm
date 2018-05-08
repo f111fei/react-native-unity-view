@@ -62,6 +62,20 @@ extern "C" void UnityPostMessage(NSString* gameObject, NSString* methodName, NSS
     UnitySendMessage([gameObject UTF8String], [methodName UTF8String], [message UTF8String]);
 }
 
+extern "C" void UnityPauseCommand()
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UnityPause(1);
+    });
+}
+
+extern "C" void UnityResumeCommand()
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UnityPause(0);
+    });
+}
+
 @implementation UnityUtils
 
 static NSHashTable* mUnityEventListeners = [NSHashTable weakObjectsHashTable];

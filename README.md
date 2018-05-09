@@ -256,6 +256,17 @@ render() {
 }
 ```
 
+##### `pause()`
+
+Pause the unity player.
+
+Thanks [@wezzle](https://github.com/wezzle). See [#13](https://github.com/f111fei/react-native-unity-view/pull/13)
+
+##### `resume()`
+
+Resume the unity player.
+
+
 #### Example Code
 
 ```

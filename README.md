@@ -77,28 +77,6 @@ include ":UnityExport"
 project(":UnityExport").projectDir = file("./UnityExport")
 ```
 
-- `android/build.gradle`
-
-```
-allprojects {
-    repositories {
-        ...
-        flatDir {
-            dirs project(':UnityExport').file('libs')
-        }
-    }
-}
-```
-
-- `android/app/build.gradle`
-
-```
-dependencies {
-    ...
-    compile project(':UnityExport')
-}
-```
-
 #### IOS Build
 
 1. Open your react native project in XCode.

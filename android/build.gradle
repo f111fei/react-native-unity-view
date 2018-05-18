@@ -31,6 +31,6 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: '../../../android/UnityExport/libs', include: ['*.jar'])
+    compile project(':UnityExport')
     compile 'com.facebook.react:react-native:+'
 }

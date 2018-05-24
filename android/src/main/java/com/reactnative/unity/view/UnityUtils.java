@@ -48,16 +48,17 @@ public class UnityUtils {
 
                 unityPlayer = new UnityPlayer(activity);
 
-                // start unity
-                addUnityViewToBackground();
                 try {
                     // wait a moument. fix unity cannot start when startup.
-                    Thread.sleep( 100 );
-                    unityPlayer.windowFocusChanged(true);
-                    unityPlayer.requestFocus();
-                    unityPlayer.resume();
+                    Thread.sleep( 1000 );
                 } catch (Exception e) {
                 }
+
+                // start unity
+                addUnityViewToBackground();
+                unityPlayer.windowFocusChanged(true);
+                unityPlayer.requestFocus();
+                unityPlayer.resume();
 
                 // restore window layout
                 if (!fullScreen) {

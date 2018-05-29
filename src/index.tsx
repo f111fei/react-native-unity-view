@@ -127,7 +127,7 @@ export default class UnityView extends React.Component<UnityViewProps> {
             if (message.callBack) {
                 waitCallbackMessageMap[id] = message;
             }
-            this.postMessage('UnityMessageManager', 'onUnityMessage', messagePrefix + JSON.stringify({
+            this.postMessage('UnityMessageManager', 'onRNMessage', messagePrefix + JSON.stringify({
                 id: id,
                 seq: message.callBack ? 'start' : '',
                 name: message.name,

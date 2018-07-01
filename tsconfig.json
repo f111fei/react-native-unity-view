@@ -4,7 +4,6 @@
         "outDir": "./out",
         "moduleResolution": "node",
         "lib": [
-            "dom",
             "es2017"
         ],
         "jsx": "react",

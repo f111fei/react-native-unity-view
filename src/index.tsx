@@ -78,7 +78,7 @@ class UnityMessageHandlerImpl implements UnityMessageHandler {
 }
 
 export default class UnityView extends React.Component<UnityViewProps> {
-    private m_unityView: React.ComponentClass<UnityViewProps> | null = null;
+    private m_unityView: React.Component<UnityViewProps> | null = null;
 
     public constructor(props: any) {
         super(props);

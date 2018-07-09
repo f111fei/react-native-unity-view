@@ -232,7 +232,7 @@ export default class UnityView extends React.Component<UnityViewProps> {
         );
     }
 
-    private setNativeUnityView(unityView: React.ComponentClass<UnityViewProps> | null) {
+    private setNativeUnityView(unityView: React.Component<UnityViewProps> | null) {
         this.m_unityView = unityView;
     }
 }

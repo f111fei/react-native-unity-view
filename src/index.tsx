@@ -17,7 +17,7 @@ export enum UnityMessageType {
 
 export interface UnityMessage {
     id: string;
-    data: any;
+    data?: any;
     uuid?: number;
     type?: UnityMessageType;
 }
@@ -49,6 +49,7 @@ export interface UnityViewProps extends ViewProperties {
 }
 
 export interface UnityMessageHandler {
+    readonly isRequest: boolean;
     readonly message: UnityMessage;
     setResponse(data: any): void;
 }
@@ -59,6 +60,10 @@ class UnityMessageHandlerImpl implements UnityMessageHandler {
     constructor(viewHandler: number, message: UnityMessage) {
         this.m_viewHandler = viewHandler;
         this.message = message;
+    }
+
+    public get isRequest(): boolean {
+        return (this.message.uuid !== undefined) && this.message.type === UnityMessageType.Request;
     }
 
     public message: UnityMessage;

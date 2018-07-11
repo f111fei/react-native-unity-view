@@ -4,6 +4,7 @@
 #import <Foundation/Foundation.h>
 #import "UnityInterface.h"
 #import "UnityUtils.h"
+#import <React/RCTLog.h>
 
 // Hack to work around iOS SDK 4.3 linker problem
 // we need at least one __TEXT, __const section entry in main application .o files
@@ -85,6 +86,11 @@ extern "C" void onUnityMessage(const char* message)
     for (id<UnityEventListener> listener in mUnityEventListeners) {
         [listener onMessage:[NSString stringWithUTF8String:message]];
     }
+}
+
+extern "C" void logToRN(const char* debugMessage, NSInteger logLevel)
+{
+    _RCTLog((RCTLogLevel)logLevel, [NSString stringWithUTF8String:debugMessage]);
 }
 
 + (void)addUnityEventListener:(id<UnityEventListener>)listener

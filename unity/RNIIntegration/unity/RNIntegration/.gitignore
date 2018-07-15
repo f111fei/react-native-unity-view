@@ -76,3 +76,7 @@ obj/
 #unity
 Library/
 Temp/
+.vs/
+*.csproj
+*.sln
+

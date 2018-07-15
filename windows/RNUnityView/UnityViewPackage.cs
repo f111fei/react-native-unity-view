@@ -11,7 +11,7 @@ namespace RNUnityView
         {
             List<IViewManager> viewManagers = new List<IViewManager>
             {
-                new UnityViewManager(reactContext)
+                UnityViewManager.GetInstance(reactContext)
             };
             return viewManagers;
         }

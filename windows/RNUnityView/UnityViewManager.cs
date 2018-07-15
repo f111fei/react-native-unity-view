@@ -21,11 +21,20 @@ namespace RNUnityView
 
         private ReactContext reactContext;
 
-        public UnityViewManager(ReactContext reactContext)
+        private static UnityViewManager instance;
+        public static UnityViewManager GetInstance(ReactContext reactContext)
         {
-            this.reactContext = reactContext;
-            this.reactContext.AddLifecycleEventListener(this);
+            if (instance == null)
+            {
+                instance = new UnityViewManager();
+            }
+
+            instance.SetReactContext(reactContext);
+
+            return instance;
         }
+
+        private UnityViewManager() { }
 
         public override string Name => REACT_CLASS;
 
@@ -143,6 +152,12 @@ namespace RNUnityView
         {
             EventDispatcher eventDispatcher = this.reactContext.GetNativeModule<UIManagerModule>().EventDispatcher;
             eventDispatcher.DispatchEvent(@event);
+        }
+
+        private void SetReactContext(ReactContext reactContext)
+        {
+            this.reactContext = reactContext;
+            this.reactContext.AddLifecycleEventListener(this);
         }
     }
 }

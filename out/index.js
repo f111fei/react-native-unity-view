@@ -30,16 +30,16 @@ exports.__esModule = true;
 var React = require("react");
 var react_native_1 = require("react-native");
 var PropTypes = require("prop-types");
-var ViewPropTypes = require("react-native/Libraries/Components/View/ViewPropTypes");
+// import { ViewPropTypes } from "@types/react-native";
 var UIManager = react_native_1.NativeModules.UIManager;
-var UNITY_VIEW_REF = 'unityview';
+var UNITY_VIEW_REF = "unityview";
 var sequence = 0;
 function generateId() {
     sequence = sequence + 1;
     return sequence;
 }
 var waitCallbackMessageMap = {};
-var messagePrefix = '@UnityMessage@';
+var messagePrefix = "@UnityMessage@";
 var MessageHandler = /** @class */ (function () {
     function MessageHandler(viewHandler) {
         this.viewHandler = viewHandler;
@@ -54,12 +54,17 @@ var MessageHandler = /** @class */ (function () {
         return handler;
     };
     MessageHandler.prototype.send = function (data) {
-        UIManager.dispatchViewManagerCommand(this.viewHandler, UIManager.UnityView.Commands.postMessage, ['UnityMessageManager', 'onUnityMessage', messagePrefix + JSON.stringify({
-                id: this.id,
-                seq: 'end',
-                name: this.name,
-                data: data
-            })]);
+        UIManager.dispatchViewManagerCommand(this.viewHandler, UIManager.UnityView.Commands.postMessage, [
+            "UnityMessageManager",
+            "onUnityMessage",
+            messagePrefix +
+                JSON.stringify({
+                    id: this.id,
+                    seq: "end",
+                    name: this.name,
+                    data: data
+                })
+        ]);
     };
     return MessageHandler;
 }());
@@ -78,52 +83,49 @@ var UnityView = /** @class */ (function (_super) {
     UnityView.prototype.postMessage = function (gameObject, methodName, message) {
         UIManager.dispatchViewManagerCommand(this.getViewHandle(), UIManager.UnityView.Commands.postMessage, [String(gameObject), String(methodName), String(message)]);
     };
-    ;
     /**
      * Pause the unity player
      */
     UnityView.prototype.pause = function () {
         UIManager.dispatchViewManagerCommand(this.getViewHandle(), UIManager.UnityView.Commands.pause, []);
     };
-    ;
     /**
      * Resume the unity player
      */
     UnityView.prototype.resume = function () {
         UIManager.dispatchViewManagerCommand(this.getViewHandle(), UIManager.UnityView.Commands.resume, []);
     };
-    ;
     /**
      * Send Message to UnityMessageManager.
      * @param message The message will post.
      */
     UnityView.prototype.postMessageToUnityManager = function (message) {
-        if (typeof message === 'string') {
-            this.postMessage('UnityMessageManager', 'onMessage', message);
+        if (typeof message === "string") {
+            this.postMessage("UnityMessageManager", "onMessage", message);
         }
         else {
             var id = generateId();
             if (message.callBack) {
                 waitCallbackMessageMap[id] = message;
             }
-            this.postMessage('UnityMessageManager', 'onRNMessage', messagePrefix + JSON.stringify({
-                id: id,
-                seq: message.callBack ? 'start' : '',
-                name: message.name,
-                data: message.data
-            }));
+            this.postMessage("UnityMessageManager", "onRNMessage", messagePrefix +
+                JSON.stringify({
+                    id: id,
+                    seq: message.callBack ? "start" : "",
+                    name: message.name,
+                    data: message.data
+                }));
         }
     };
-    ;
     UnityView.prototype.getViewHandle = function () {
         return react_native_1.findNodeHandle(this.refs[UNITY_VIEW_REF]);
     };
     UnityView.prototype.onMessage = function (event) {
         var message = event.nativeEvent.message;
         if (message.startsWith(messagePrefix)) {
-            message = message.replace(messagePrefix, '');
+            message = message.replace(messagePrefix, "");
             var handler = MessageHandler.deserialize(this.getViewHandle(), message);
-            if (handler.seq === 'end') {
+            if (handler.seq === "end") {
                 // handle callback message
                 var m = waitCallbackMessageMap[handler.id];
                 delete waitCallbackMessageMap[handler.id];
@@ -146,9 +148,9 @@ var UnityView = /** @class */ (function (_super) {
         var props = __rest(this.props, []);
         return (React.createElement(NativeUnityView, __assign({ ref: UNITY_VIEW_REF }, props, { onMessage: this.onMessage.bind(this) })));
     };
-    UnityView.propTypes = __assign({}, ViewPropTypes, { onMessage: PropTypes.func });
+    UnityView.propTypes = __assign({}, react_native_1.ViewPropTypes, { onMessage: PropTypes.func });
     return UnityView;
 }(React.Component));
 exports["default"] = UnityView;
-var NativeUnityView = react_native_1.requireNativeComponent('UnityView', UnityView);
+var NativeUnityView = react_native_1.requireNativeComponent("UnityView", UnityView);
 //# sourceMappingURL=index.js.map

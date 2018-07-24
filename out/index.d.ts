@@ -1,6 +1,6 @@
-/// <reference types="react" />
 import * as React from "react";
-import { ViewProperties } from 'react-native';
+import { ViewProperties } from "react-native";
+import * as PropTypes from "prop-types";
 export interface UnityViewMessageEventData {
     message: string;
 }
@@ -19,7 +19,7 @@ export interface UnityViewProps extends ViewProperties {
 export declare class MessageHandler {
     static deserialize(viewHandler: number, message: string): MessageHandler;
     id: number;
-    seq: 'start' | 'end' | '';
+    seq: "start" | "end" | "";
     name: string;
     data: any;
     private viewHandler;
@@ -27,7 +27,10 @@ export declare class MessageHandler {
     send(data: any): void;
 }
 export default class UnityView extends React.Component<UnityViewProps> {
-    static propTypes: any;
+    static propTypes: {
+        onMessage: PropTypes.Requireable<(...args: any[]) => any>;
+        isRequired: (object: any, key: string, componentName: string, ...rest: any[]) => Error;
+    };
     /**
      * Send Message to Unity.
      * @param gameObject The Name of GameObject. Also can be a path string.
@@ -48,7 +51,7 @@ export default class UnityView extends React.Component<UnityViewProps> {
      * @param message The message will post.
      */
     postMessageToUnityManager(message: string | UnityViewMessage): void;
-    private getViewHandle();
-    private onMessage(event);
+    private getViewHandle;
+    private onMessage;
     render(): JSX.Element;
 }

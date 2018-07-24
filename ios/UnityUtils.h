@@ -25,11 +25,13 @@ void UnityResumeCommand();
 - (void)onMessage:(NSString *)message;
 @end
 
+typedef void(^onUnityMsg)(NSString * msg);
+
 @interface UnityUtils : NSObject
 
 + (void)addUnityEventListener:(id<UnityEventListener>)listener;
 + (void)removeUnityEventListener:(id<UnityEventListener>)listener;
-
++ (void)setUnityMsgCallback:(onUnityMsg)callback;
 @end
 
 #endif /* UnityUtils_h */

@@ -10,6 +10,7 @@
 		1B593B7D2052A50D00CBB34F /* RNUnityViewManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 1B593B772052A50C00CBB34F /* RNUnityViewManager.m */; };
 		1B593B7E2052A50D00CBB34F /* UnityUtils.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1B593B792052A50C00CBB34F /* UnityUtils.mm */; };
 		1B593B7F2052A50D00CBB34F /* RNUnityView.m in Sources */ = {isa = PBXBuildFile; fileRef = 1B593B7A2052A50C00CBB34F /* RNUnityView.m */; };
+		EF6C65E421073D1A00C1A907 /* UnityManager.m in Sources */ = {isa = PBXBuildFile; fileRef = EF6C65E321073D1A00C1A907 /* UnityManager.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -32,6 +33,8 @@
 		1B593B7A2052A50C00CBB34F /* RNUnityView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RNUnityView.m; sourceTree = "<group>"; };
 		1B593B7B2052A50D00CBB34F /* RNUnityViewManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RNUnityViewManager.h; sourceTree = "<group>"; };
 		1B593B7C2052A50D00CBB34F /* UnityUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UnityUtils.h; sourceTree = "<group>"; };
+		EF6C65E221073CE200C1A907 /* UnityManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UnityManager.h; sourceTree = "<group>"; };
+		EF6C65E321073D1A00C1A907 /* UnityManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = UnityManager.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -48,6 +51,8 @@
 		1B593B562052A47600CBB34F = {
 			isa = PBXGroup;
 			children = (
+				EF6C65E321073D1A00C1A907 /* UnityManager.m */,
+				EF6C65E221073CE200C1A907 /* UnityManager.h */,
 				1B593B782052A50C00CBB34F /* RNUnityView.h */,
 				1B593B7A2052A50C00CBB34F /* RNUnityView.m */,
 				1B593B7B2052A50D00CBB34F /* RNUnityViewManager.h */,
@@ -124,6 +129,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1B593B7D2052A50D00CBB34F /* RNUnityViewManager.m in Sources */,
+				EF6C65E421073D1A00C1A907 /* UnityManager.m in Sources */,
 				1B593B7F2052A50D00CBB34F /* RNUnityView.m in Sources */,
 				1B593B7E2052A50D00CBB34F /* UnityUtils.mm in Sources */,
 			);

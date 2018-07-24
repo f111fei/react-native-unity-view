@@ -80,11 +80,16 @@ extern "C" void UnityResumeCommand()
 @implementation UnityUtils
 
 static NSHashTable* mUnityEventListeners = [NSHashTable weakObjectsHashTable];
+static onUnityMsg mUnityMsgCallback;
 
 extern "C" void onUnityMessage(const char* message)
 {
     for (id<UnityEventListener> listener in mUnityEventListeners) {
         [listener onMessage:[NSString stringWithUTF8String:message]];
+    }
+    
+    if (mUnityMsgCallback) {
+        mUnityMsgCallback([NSString stringWithUTF8String:message]);
     }
 }
 
@@ -103,4 +108,8 @@ extern "C" void logToRN(const char* debugMessage, NSInteger logLevel)
     [mUnityEventListeners removeObject:listener];
 }
 
++ (void)setUnityMsgCallback:(onUnityMsg)callback
+{
+    mUnityMsgCallback = callback;
+}
 @end

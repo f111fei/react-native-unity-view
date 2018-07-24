@@ -34,17 +34,17 @@
 // To export a module named CalendarManager
 RCT_EXPORT_MODULE()
 
-RCT_EXPORT_METHOD(postMessage:(nonnull NSNumber *)reactTag gameObject:(NSString *)gameObject methodName:(NSString *)methodName message:(NSString *)message)
+RCT_EXPORT_METHOD(postMessage:(NSString *)gameObject methodName:(NSString *)methodName message:(NSString *)message)
 {
     UnityPostMessage(gameObject, methodName, message);
 }
 
-RCT_EXPORT_METHOD(pause: (nonnull NSNumber *)reactTag)
+RCT_EXPORT_METHOD()
 {
     UnityPauseCommand();
 }
 
-RCT_EXPORT_METHOD(resume: (nonnull NSNumber *)reactTag)
+RCT_EXPORT_METHOD()
 {
     UnityResumeCommand();
 }

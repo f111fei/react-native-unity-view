@@ -39,13 +39,11 @@ RCT_EXPORT_METHOD(postMessage:(NSString *)gameObject methodName:(NSString *)meth
     UnityPostMessage(gameObject, methodName, message);
 }
 
-RCT_EXPORT_METHOD()
-{
+RCT_EXPORT_METHOD(pause){
     UnityPauseCommand();
 }
 
-RCT_EXPORT_METHOD()
-{
+RCT_EXPORT_METHOD(resume){
     UnityResumeCommand();
 }
 

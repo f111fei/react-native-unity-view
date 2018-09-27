@@ -69,4 +69,4 @@ android/*.iml
 
 tsconfig.json
 *.js.map
-/src
+# /src

@@ -7,7 +7,7 @@ import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.common.MapBuilder;
-import com.facebook.react.uimanager.SimpleViewManager;
+import com.facebook.react.uimanager.ViewGroupManager;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.unity3d.player.UnityPlayer;
 
@@ -19,7 +19,7 @@ import javax.annotation.Nullable;
  * Created by xzper on 2018-02-07.
  */
 
-public class UnityViewManager extends SimpleViewManager<UnityView> implements LifecycleEventListener, View.OnAttachStateChangeListener {
+public class UnityViewManager extends ViewGroupManager<UnityView> implements LifecycleEventListener, View.OnAttachStateChangeListener {
     private static final String REACT_CLASS = "UnityView";
 
     public static final int COMMAND_POST_MESSAGE = 1;

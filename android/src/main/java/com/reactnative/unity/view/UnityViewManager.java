@@ -10,7 +10,7 @@ import com.facebook.react.common.MapBuilder;
 import com.facebook.react.uimanager.ViewGroupManager;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.unity3d.player.UnityPlayer;
-import com.google.ar.core.ArCoreApk;
+
 import java.util.Map;
 
 import javax.annotation.Nullable;
@@ -27,14 +27,12 @@ public class UnityViewManager extends ViewGroupManager<UnityView> implements Lif
     public static final int COMMAND_RESUME = 3;
 
     private static boolean DONOT_RESUME = false;
-    boolean isARCoreSupported;
 
     private ReactApplicationContext context;
 
     UnityViewManager(ReactApplicationContext context) {
         super();
         this.context = context;
-        this.isARCoreSupported = ArCoreApk.getInstance().checkAvailability(context).isSupported();
         context.addLifecycleEventListener(this);
     }
 
@@ -68,7 +66,7 @@ public class UnityViewManager extends ViewGroupManager<UnityView> implements Lif
             case COMMAND_RESUME:
                 UnityUtils.getPlayer().resume();
                 DONOT_RESUME = false;
-                break;
+                break;                
         }
     }
 
@@ -96,29 +94,23 @@ public class UnityViewManager extends ViewGroupManager<UnityView> implements Lif
 
     @Override
     public void onHostResume() {
-        if (this.isARCoreSupported) {
-            if (!UnityUtils.hasUnityPlayer()) {
-                UnityUtils.createPlayer(context.getCurrentActivity());
-            } else {
-                if (!DONOT_RESUME) {
-                    UnityUtils.getPlayer().resume();
-                }
+        if (!UnityUtils.hasUnityPlayer()) {
+            UnityUtils.createPlayer(context.getCurrentActivity());
+        } else {
+            if (!DONOT_RESUME) {
+                UnityUtils.getPlayer().resume();
             }
         }
     }
 
     @Override
     public void onHostPause() {
-        if (this.isARCoreSupported) {
-            UnityUtils.getPlayer().pause();
-        }
+        UnityUtils.getPlayer().pause();
     }
 
     @Override
     public void onHostDestroy() {
-        if (this.isARCoreSupported) {
-            UnityUtils.getPlayer().quit();
-        }
+        UnityUtils.getPlayer().quit();
     }
 
     @Override

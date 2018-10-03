@@ -1,7 +1,6 @@
 import * as React from "react";
-import { requireNativeComponent, ViewProperties, findNodeHandle, NativeModules, NativeSyntheticEvent } from 'react-native';
+import { requireNativeComponent, ViewProperties, findNodeHandle, NativeModules, NativeSyntheticEvent, ViewPropTypes } from 'react-native';
 import * as PropTypes from "prop-types";
-import * as ViewPropTypes from 'react-native/Libraries/Components/View/ViewPropTypes';
 
 const { UIManager } = NativeModules;
 
@@ -180,4 +179,4 @@ export default class UnityView extends React.Component<UnityViewProps> {
     }
 }
 
-const NativeUnityView = requireNativeComponent<UnityViewProps>('UnityView', UnityView);
+const NativeUnityView = requireNativeComponent<UnityViewProps>('UnityView');

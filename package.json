@@ -5,7 +5,7 @@
   "main": "out/index.js",
   "typings": "out/index.d.ts",
   "scripts": {
-    "compile": "node node_modules/typescript/bin/tsc"
+    "compile": "node node_modules/typescript/bin/tsc --skipLibCheck"
   },
   "keywords": [
     "react",

@@ -63,7 +63,7 @@ export class MessageHandler {
         UIManager.dispatchViewManagerCommand(
             this.viewHandler,
             UIManager.UnityView.Commands.postMessage,
-            ['UnityMessageManager', 'onUnityMessage', messagePrefix + JSON.stringify({
+            ['UnityMessageManager', 'onRNMessage', messagePrefix + JSON.stringify({
                 id: this.id,
                 seq: 'end',
                 name: this.name,

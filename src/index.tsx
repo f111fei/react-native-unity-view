@@ -1,7 +1,7 @@
 import * as React from "react";
 import { requireNativeComponent, ViewProperties, findNodeHandle, NativeModules, NativeSyntheticEvent } from 'react-native';
 import * as PropTypes from "prop-types";
-import * as ViewPropTypes from 'react-native/Libraries/Components/View/ViewPropTypes';
+const { ViewPropTypes } = require('react-native');
 
 const { UIManager } = NativeModules;
 

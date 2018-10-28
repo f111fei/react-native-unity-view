@@ -88,7 +88,7 @@ public class UnityViewManager extends SimpleViewManager<UnityView> implements Li
     @Override
     public @Nullable Map getExportedCustomDirectEventTypeConstants() {
         return MapBuilder.of(
-                UnityMessageEvent.EVENT_NAME, MapBuilder.of("registrationName", "onMessage")
+                "unityMessage", MapBuilder.of("registrationName", "onMessage")
         );
     }
 

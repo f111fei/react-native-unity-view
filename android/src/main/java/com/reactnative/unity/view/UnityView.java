@@ -4,10 +4,10 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.widget.FrameLayout;
 
+import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactContext;
-import com.facebook.react.uimanager.UIManagerModule;
-import com.facebook.react.uimanager.events.Event;
-import com.facebook.react.uimanager.events.EventDispatcher;
+import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.uimanager.events.RCTEventEmitter;
 import com.unity3d.player.UnityPlayer;
 
 /**
@@ -49,13 +49,13 @@ public class UnityView extends FrameLayout implements UnityEventListener {
 
     @Override
     public void onMessage(String message) {
-        dispatchEvent(this, new UnityMessageEvent(this.getId(), message));
-    }
-
-    protected static void dispatchEvent(UnityView view, Event event) {
-        ReactContext reactContext = (ReactContext) view.getContext();
-        EventDispatcher eventDispatcher =
-                reactContext.getNativeModule(UIManagerModule.class).getEventDispatcher();
-        eventDispatcher.dispatchEvent(event);
+        ReactContext reactContext = (ReactContext) getContext();
+        WritableMap data = Arguments.createMap();
+        data.putString("message", message);
+        reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
+                getId(),
+                "unityMessage",
+                data
+        );
     }
 }

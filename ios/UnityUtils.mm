@@ -33,8 +33,9 @@ extern "C" void InitUnity()
         char** argv = new char*[count];
         for(int i=0; i<count; i++) {
             const char* arg = [processInfo.arguments[i] UTF8String];
-            argv[i] = new char[strlen(arg)];
-            strcpy(argv[i], arg);
+            size_t len = strlen(arg);
+            argv[i] = new char[len + 1];
+            memcpy(argv[i], arg, len + 1);
         }
         
         UnityInitTrampoline();

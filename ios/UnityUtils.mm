@@ -25,6 +25,8 @@ extern "C" void InitUnity()
         return;
     }
     unity_inited = true;
+
+    UnityInitStartupTime();
     
     @autoreleasepool
     {

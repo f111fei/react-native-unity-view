@@ -37,7 +37,8 @@ RCT_EXPORT_VIEW_PROPERTY(onMessage, RCTDirectEventBlock)
                              UIApplicationDidEnterBackgroundNotification,
                              UIApplicationWillTerminateNotification,
                              UIApplicationWillResignActiveNotification,
-                             UIApplicationWillEnterForegroundNotification]) {
+                             UIApplicationWillEnterForegroundNotification,
+                             UIApplicationDidReceiveMemoryWarningNotification]) {
         
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(handleAppStateDidChange:)
@@ -62,7 +63,9 @@ RCT_EXPORT_VIEW_PROPERTY(onMessage, RCTDirectEventBlock)
         [unityAppController applicationDidBecomeActive:application];
     } else if ([notification.name isEqualToString:UIApplicationWillTerminateNotification]) {
         [unityAppController applicationWillTerminate:application];
-    }
+    } else if ([notification.name isEqualToString:UIApplicationDidReceiveMemoryWarningNotification]) {
+		[unityAppController applicationDidReceiveMemoryWarning:application];
+	}
 }
 
 - (void)setBridge:(RCTBridge *)bridge {

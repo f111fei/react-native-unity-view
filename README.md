@@ -93,6 +93,19 @@ project(":UnityExport").projectDir = file("./UnityExport")
 
 ![image](https://user-images.githubusercontent.com/7069719/37325486-182c7bd4-26c9-11e8-9fc0-8e1a149d30b2.png)
 
+5. Modify `main.m`
+
+```
+#import "UnityUtils.h"
+
+int main(int argc, char * argv[]) {
+  @autoreleasepool {
+    InitArgs(argc, argv);
+    return UIApplicationMain(argc, argv, nil, NSStringFromClass([AppDelegate class]));
+  }
+}
+```
+
 ### Use In React Native
 
 #### Props

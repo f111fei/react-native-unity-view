@@ -18,7 +18,12 @@ RCT_EXPORT_VIEW_PROPERTY(onMessage, RCTDirectEventBlock)
 
 - (UIView *)view
 {
-    return [[RNUnityView alloc] init];
+    [self createUnity];
+    self.currentView = [[RNUnityView alloc] init];
+    if (self.isUnityReady) {
+        [self.currentView setUnityView: [GetAppController() unityView]];
+    }
+    return self.currentView;
 }
 
 - (dispatch_queue_t)methodQueue
@@ -69,23 +74,31 @@ RCT_EXPORT_VIEW_PROPERTY(onMessage, RCTDirectEventBlock)
 }
 
 - (void)handleUnityReady {
+    self.isUnityReady = YES;
+    if (self.currentView) {
+        [self.currentView setUnityView: [GetAppController() unityView]];
+    }
+}
+
+- (void)createUnity {
+    if (UnityIsInited()) {
+        return;
+    }
+    UIApplication* application = [UIApplication sharedApplication];
+    // Always keep RN window in top
+    application.keyWindow.windowLevel = UIWindowLevelNormal + 1;
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleUnityReady) name:@"UnityReady" object:nil];
+    
+    InitUnity();
+    
+    UnityAppController *controller = GetAppController();
+    [controller application:application didFinishLaunchingWithOptions:self.bridge.launchOptions];
+    [controller applicationDidBecomeActive:application];
+    [RNUnityViewManager listenAppState];
 }
 
 - (void)setBridge:(RCTBridge *)bridge {
     _bridge = bridge;
-    
-    if (!UnityIsInited()) {
-        UIApplication* application = [UIApplication sharedApplication];
-        // Always keep RN window in top
-        application.keyWindow.windowLevel = UIWindowLevelNormal + 1;
-        
-        InitUnity();
-        
-        UnityAppController *controller = GetAppController();
-        [controller application:application didFinishLaunchingWithOptions:bridge.launchOptions];
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleUnityReady) name:@"UnityReady" object:nil];
-        [RNUnityViewManager listenAppState];
-    }
 }
 
 RCT_EXPORT_METHOD(postMessage:(nonnull NSNumber *)reactTag gameObject:(NSString *)gameObject methodName:(NSString *)methodName message:(NSString *)message)

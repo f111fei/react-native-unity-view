@@ -18,27 +18,29 @@ public class UnityView extends FrameLayout implements UnityEventListener {
 
     private UnityPlayer view;
 
-    protected UnityView(Context context, UnityPlayer view) {
+    protected UnityView(Context context) {
         super(context);
-        this.view = view;
     }
 
-    @Override
-    protected void onAttachedToWindow() {
-        super.onAttachedToWindow();
+    public void setUnityPlayer(UnityPlayer player) {
+        this.view = player;
         UnityUtils.addUnityViewToGroup(this);
     }
 
     @Override
     public void onWindowFocusChanged(boolean hasWindowFocus) {
         super.onWindowFocusChanged(hasWindowFocus);
-        view.windowFocusChanged(hasWindowFocus);
+        if (view != null) {
+            view.windowFocusChanged(hasWindowFocus);
+        }
     }
 
     @Override
     protected void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        view.configurationChanged(newConfig);
+        if (view != null) {
+            view.configurationChanged(newConfig);
+        }
     }
 
     @Override

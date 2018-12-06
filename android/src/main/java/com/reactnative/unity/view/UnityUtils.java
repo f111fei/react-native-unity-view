@@ -18,20 +18,29 @@ import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
  */
 
 public class UnityUtils {
+    public interface CreateCallback {
+        void onReady();
+    }
+
+
     private static UnityPlayer unityPlayer;
+    private static boolean _isUnityReady;
 
     private static final CopyOnWriteArraySet<UnityEventListener> mUnityEventListeners =
             new CopyOnWriteArraySet<>();
 
     public static UnityPlayer getPlayer() {
+        if (!_isUnityReady) {
+            return null;
+        }
         return unityPlayer;
     }
 
-    public static boolean hasUnityPlayer() {
-        return unityPlayer != null;
+    public static boolean isUnityReady() {
+        return _isUnityReady;
     }
 
-    public static void createPlayer(Context context) {
+    public static void createPlayer(final Context context, final CreateCallback callback) {
         if (unityPlayer != null) {
             return;
         }
@@ -65,6 +74,8 @@ public class UnityUtils {
                     activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
                     activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
                 }
+                _isUnityReady = true;
+                callback.onReady();
             }
         });
     }
@@ -94,6 +105,9 @@ public class UnityUtils {
     }
 
     public static void addUnityViewToBackground() {
+        if (unityPlayer == null) {
+            return;
+        }
         if (unityPlayer.getParent() != null) {
             ((ViewGroup)unityPlayer.getParent()).removeView(unityPlayer);
         }
@@ -106,6 +120,9 @@ public class UnityUtils {
     }
 
     public static void addUnityViewToGroup(ViewGroup group) {
+        if (unityPlayer == null) {
+            return;
+        }
         if (unityPlayer.getParent() != null) {
             ((ViewGroup)unityPlayer.getParent()).removeView(unityPlayer);
         }

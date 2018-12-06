@@ -69,16 +69,18 @@ RCT_EXPORT_VIEW_PROPERTY(onMessage, RCTDirectEventBlock)
 }
 
 - (void)handleUnityReady {
-    UIApplication* application = [UIApplication sharedApplication];
-    [application.windows[0] makeKeyAndVisible];
 }
 
 - (void)setBridge:(RCTBridge *)bridge {
     _bridge = bridge;
     
     if (!UnityIsInited()) {
-        InitUnity();
         UIApplication* application = [UIApplication sharedApplication];
+        // Always keep RN window in top
+        application.keyWindow.windowLevel = UIWindowLevelNormal + 1;
+        
+        InitUnity();
+        
         UnityAppController *controller = GetAppController();
         [controller application:application didFinishLaunchingWithOptions:bridge.launchOptions];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleUnityReady) name:@"UnityReady" object:nil];

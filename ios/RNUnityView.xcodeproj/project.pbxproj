@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1B2EDAA421C2A43800680B2F /* UnityNativeModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 1B2EDAA321C2A43800680B2F /* UnityNativeModule.m */; };
 		1B593B7D2052A50D00CBB34F /* RNUnityViewManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 1B593B772052A50C00CBB34F /* RNUnityViewManager.m */; };
 		1B593B7E2052A50D00CBB34F /* UnityUtils.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1B593B792052A50C00CBB34F /* UnityUtils.mm */; };
 		1B593B7F2052A50D00CBB34F /* RNUnityView.m in Sources */ = {isa = PBXBuildFile; fileRef = 1B593B7A2052A50C00CBB34F /* RNUnityView.m */; };
@@ -25,6 +26,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		1B2EDAA321C2A43800680B2F /* UnityNativeModule.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = UnityNativeModule.m; sourceTree = "<group>"; };
+		1B2EDAA521C2A48E00680B2F /* UnityNativeModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UnityNativeModule.h; sourceTree = "<group>"; };
 		1B593B5F2052A47600CBB34F /* libRNUnityView.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libRNUnityView.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		1B593B772052A50C00CBB34F /* RNUnityViewManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RNUnityViewManager.m; sourceTree = "<group>"; };
 		1B593B782052A50C00CBB34F /* RNUnityView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RNUnityView.h; sourceTree = "<group>"; };
@@ -48,6 +51,8 @@
 		1B593B562052A47600CBB34F = {
 			isa = PBXGroup;
 			children = (
+				1B2EDAA521C2A48E00680B2F /* UnityNativeModule.h */,
+				1B2EDAA321C2A43800680B2F /* UnityNativeModule.m */,
 				1B593B782052A50C00CBB34F /* RNUnityView.h */,
 				1B593B7A2052A50C00CBB34F /* RNUnityView.m */,
 				1B593B7B2052A50D00CBB34F /* RNUnityViewManager.h */,
@@ -126,6 +131,7 @@
 				1B593B7D2052A50D00CBB34F /* RNUnityViewManager.m in Sources */,
 				1B593B7F2052A50D00CBB34F /* RNUnityView.m in Sources */,
 				1B593B7E2052A50D00CBB34F /* UnityUtils.mm in Sources */,
+				1B2EDAA421C2A43800680B2F /* UnityNativeModule.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

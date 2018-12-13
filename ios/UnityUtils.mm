@@ -1,9 +1,10 @@
 #include "RegisterMonoModules.h"
 #include "RegisterFeatures.h"
 #include <csignal>
-#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 #import "UnityInterface.h"
 #import "UnityUtils.h"
+#import "UnityAppController.h"
 
 // Hack to work around iOS SDK 4.3 linker problem
 // we need at least one __TEXT, __const section entry in main application .o files
@@ -76,6 +77,42 @@ extern "C" void UnityResumeCommand()
 @implementation UnityUtils
 
 static NSHashTable* mUnityEventListeners = [NSHashTable weakObjectsHashTable];
+static BOOL _isUnityReady = NO;
+
++ (BOOL)isUnityReady
+{
+    return _isUnityReady;
+}
+
++ (void)createPlayer:(void (^)(void))completed
+{
+    if (_isUnityReady) {
+        completed();
+        return;
+    }
+    
+    if (UnityIsInited()) {
+        // todo
+        completed();
+        return;
+    }
+    
+    UIApplication* application = [UIApplication sharedApplication];
+
+    // Always keep RN window in top
+    application.keyWindow.windowLevel = UIWindowLevelNormal + 1;
+    
+    [[NSNotificationCenter defaultCenter] addObserverForName:@"UnityReady" object:nil queue:[NSOperationQueue mainQueue]  usingBlock:^(NSNotification * _Nonnull note) {
+        _isUnityReady = YES;
+        completed();
+    }];
+
+    InitUnity();
+
+    UnityAppController *controller = GetAppController();
+    [controller application:application didFinishLaunchingWithOptions:nil];
+    [controller applicationDidBecomeActive:application];
+}
 
 extern "C" void onUnityMessage(const char* message)
 {

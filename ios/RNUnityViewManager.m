@@ -14,14 +14,16 @@
 @synthesize bridge = _bridge;
 
 RCT_EXPORT_MODULE(UnityView)
-RCT_EXPORT_VIEW_PROPERTY(onMessage, RCTDirectEventBlock)
 
 - (UIView *)view
 {
-    [self createUnity];
     self.currentView = [[RNUnityView alloc] init];
-    if (self.isUnityReady) {
+    if ([UnityUtils isUnityReady]) {
         [self.currentView setUnityView: [GetAppController() unityView]];
+    } else {
+        [UnityUtils createPlayer:^{
+            [self.currentView setUnityView: [GetAppController() unityView]];
+        }];
     }
     return self.currentView;
 }
@@ -54,6 +56,9 @@ RCT_EXPORT_VIEW_PROPERTY(onMessage, RCTDirectEventBlock)
 
 + (void)handleAppStateDidChange:(NSNotification *)notification
 {
+    if (![UnityUtils isUnityReady]) {
+        return;
+    }
     UnityAppController* unityAppController = GetAppController();
     
     UIApplication* application = [UIApplication sharedApplication];
@@ -73,32 +78,9 @@ RCT_EXPORT_VIEW_PROPERTY(onMessage, RCTDirectEventBlock)
 	}
 }
 
-- (void)handleUnityReady {
-    self.isUnityReady = YES;
-    if (self.currentView) {
-        [self.currentView setUnityView: [GetAppController() unityView]];
-    }
-}
-
-- (void)createUnity {
-    if (UnityIsInited()) {
-        return;
-    }
-    UIApplication* application = [UIApplication sharedApplication];
-    // Always keep RN window in top
-    application.keyWindow.windowLevel = UIWindowLevelNormal + 1;
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleUnityReady) name:@"UnityReady" object:nil];
-    
-    InitUnity();
-    
-    UnityAppController *controller = GetAppController();
-    [controller application:application didFinishLaunchingWithOptions:self.bridge.launchOptions];
-    [controller applicationDidBecomeActive:application];
-    [RNUnityViewManager listenAppState];
-}
-
 - (void)setBridge:(RCTBridge *)bridge {
     _bridge = bridge;
+    [RNUnityViewManager listenAppState];
 }
 
 RCT_EXPORT_METHOD(postMessage:(nonnull NSNumber *)reactTag gameObject:(NSString *)gameObject methodName:(NSString *)methodName message:(NSString *)message)

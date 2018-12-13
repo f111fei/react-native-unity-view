@@ -67,6 +67,14 @@ Android will export unity project to `android/UnityExport`.
 
 IOS will export unity project to `ios/UnityExport`.
 
+### Add UnityMessageManager Support
+
+Copy [`UnityMessageManager.cs`](https://github.com/f111fei/react-native-unity-demo/blob/master/unity/Cube/Assets/Scripts/UnityMessageManager.cs) to your unity project.
+
+Copy [`Newtonsoft.Json`](https://github.com/f111fei/react-native-unity-demo/tree/master/unity/Cube/Assets/Scripts/Newtonsoft.Json) to your unity project.
+
+Copy [`link.xml`](https://github.com/f111fei/react-native-unity-demo/blob/master/unity/Cube/Assets/link.xml) to your unity project.
+
 ### Configure Native Build
 
 #### Android Build

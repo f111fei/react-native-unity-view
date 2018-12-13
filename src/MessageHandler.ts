@@ -4,7 +4,7 @@ const { UnityNativeModule } = NativeModules;
 export const UnityMessagePrefix = '@UnityMessage@';
 
 export default class MessageHandler {
-    public static deserialize(message: string) {
+    public static deserialize(message: string): MessageHandler {
         if (!MessageHandler.isUnityMessage(message)) {
             throw new Error(`"${message}" is't an UnityMessage.`);
         }

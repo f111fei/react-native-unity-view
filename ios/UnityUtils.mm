@@ -131,29 +131,29 @@ static BOOL _isUnityReady = NO;
         return;
     }
     
-    if (UnityIsInited()) {
-        // todo
-        completed();
-        return;
-    }
-    
-    UIApplication* application = [UIApplication sharedApplication];
-
-    // Always keep RN window in top
-    application.keyWindow.windowLevel = UIWindowLevelNormal + 1;
-    
     [[NSNotificationCenter defaultCenter] addObserverForName:@"UnityReady" object:nil queue:[NSOperationQueue mainQueue]  usingBlock:^(NSNotification * _Nonnull note) {
         _isUnityReady = YES;
         completed();
     }];
-
-    InitUnity();
-
-    UnityAppController *controller = GetAppController();
-    [controller application:application didFinishLaunchingWithOptions:nil];
-    [controller applicationDidBecomeActive:application];
     
-    [UnityUtils listenAppState];
+    if (UnityIsInited()) {
+        return;
+    }
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIApplication* application = [UIApplication sharedApplication];
+        
+        // Always keep RN window in top
+        application.keyWindow.windowLevel = UIWindowLevelNormal + 1;
+        
+        InitUnity();
+        
+        UnityAppController *controller = GetAppController();
+        [controller application:application didFinishLaunchingWithOptions:nil];
+        [controller applicationDidBecomeActive:application];
+        
+        [UnityUtils listenAppState];
+    });
 }
 
 extern "C" void onUnityMessage(const char* message)

@@ -33,14 +33,12 @@ RCT_EXPORT_MODULE(UnityNativeModule);
     return YES;
 }
 
-RCT_EXPORT_METHOD(isReady: resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXPORT_METHOD(isReady:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
 {
     resolve(@([UnityUtils isUnityReady]));
 }
 
-RCT_EXPORT_METHOD(createUnity: resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXPORT_METHOD(createUnity:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
 {
     [UnityUtils createPlayer:^{
         resolve(@(YES));

@@ -84,6 +84,46 @@ static BOOL _isUnityReady = NO;
     return _isUnityReady;
 }
 
++ (void)handleAppStateDidChange:(NSNotification *)notification
+{
+    if (!_isUnityReady) {
+        return;
+    }
+    UnityAppController* unityAppController = GetAppController();
+    
+    UIApplication* application = [UIApplication sharedApplication];
+    
+    if ([notification.name isEqualToString:UIApplicationWillResignActiveNotification]) {
+        [unityAppController applicationWillResignActive:application];
+    } else if ([notification.name isEqualToString:UIApplicationDidEnterBackgroundNotification]) {
+        [unityAppController applicationDidEnterBackground:application];
+    } else if ([notification.name isEqualToString:UIApplicationWillEnterForegroundNotification]) {
+        [unityAppController applicationWillEnterForeground:application];
+    } else if ([notification.name isEqualToString:UIApplicationDidBecomeActiveNotification]) {
+        [unityAppController applicationDidBecomeActive:application];
+    } else if ([notification.name isEqualToString:UIApplicationWillTerminateNotification]) {
+        [unityAppController applicationWillTerminate:application];
+    } else if ([notification.name isEqualToString:UIApplicationDidReceiveMemoryWarningNotification]) {
+        [unityAppController applicationDidReceiveMemoryWarning:application];
+    }
+}
+
++ (void)listenAppState
+{
+    for (NSString *name in @[UIApplicationDidBecomeActiveNotification,
+                             UIApplicationDidEnterBackgroundNotification,
+                             UIApplicationWillTerminateNotification,
+                             UIApplicationWillResignActiveNotification,
+                             UIApplicationWillEnterForegroundNotification,
+                             UIApplicationDidReceiveMemoryWarningNotification]) {
+        
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(handleAppStateDidChange:)
+                                                     name:name
+                                                   object:nil];
+    }
+}
+
 + (void)createPlayer:(void (^)(void))completed
 {
     if (_isUnityReady) {
@@ -112,6 +152,8 @@ static BOOL _isUnityReady = NO;
     UnityAppController *controller = GetAppController();
     [controller application:application didFinishLaunchingWithOptions:nil];
     [controller applicationDidBecomeActive:application];
+    
+    [UnityUtils listenAppState];
 }
 
 extern "C" void onUnityMessage(const char* message)

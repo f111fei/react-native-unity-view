@@ -38,49 +38,8 @@ RCT_EXPORT_MODULE(UnityView)
     return YES;
 }
 
-+ (void)listenAppState
-{
-    for (NSString *name in @[UIApplicationDidBecomeActiveNotification,
-                             UIApplicationDidEnterBackgroundNotification,
-                             UIApplicationWillTerminateNotification,
-                             UIApplicationWillResignActiveNotification,
-                             UIApplicationWillEnterForegroundNotification,
-                             UIApplicationDidReceiveMemoryWarningNotification]) {
-        
-        [[NSNotificationCenter defaultCenter] addObserver:self
-                                                 selector:@selector(handleAppStateDidChange:)
-                                                     name:name
-                                                   object:nil];
-    }
-}
-
-+ (void)handleAppStateDidChange:(NSNotification *)notification
-{
-    if (![UnityUtils isUnityReady]) {
-        return;
-    }
-    UnityAppController* unityAppController = GetAppController();
-    
-    UIApplication* application = [UIApplication sharedApplication];
-    
-    if ([notification.name isEqualToString:UIApplicationWillResignActiveNotification]) {
-        [unityAppController applicationWillResignActive:application];
-    } else if ([notification.name isEqualToString:UIApplicationDidEnterBackgroundNotification]) {
-        [unityAppController applicationDidEnterBackground:application];
-    } else if ([notification.name isEqualToString:UIApplicationWillEnterForegroundNotification]) {
-        [unityAppController applicationWillEnterForeground:application];
-    } else if ([notification.name isEqualToString:UIApplicationDidBecomeActiveNotification]) {
-        [unityAppController applicationDidBecomeActive:application];
-    } else if ([notification.name isEqualToString:UIApplicationWillTerminateNotification]) {
-        [unityAppController applicationWillTerminate:application];
-    } else if ([notification.name isEqualToString:UIApplicationDidReceiveMemoryWarningNotification]) {
-		[unityAppController applicationDidReceiveMemoryWarning:application];
-	}
-}
-
 - (void)setBridge:(RCTBridge *)bridge {
     _bridge = bridge;
-    [RNUnityViewManager listenAppState];
 }
 
 RCT_EXPORT_METHOD(postMessage:(nonnull NSNumber *)reactTag gameObject:(NSString *)gameObject methodName:(NSString *)methodName message:(NSString *)message)

@@ -183,7 +183,7 @@ namespace ReactNative
                 if (subscriptionInfo == null)
                 {
                     subscriptionInfo = new Subscription(
-                        name,
+                        this.name,
                         handler,
                         (self) => this.Unsubscribe(self));
                     list[list.Length - 1] = subscriptionInfo;
@@ -308,7 +308,7 @@ namespace ReactNative
                     // handle callback message
                     UnityResponseDelegate m;
                     var uuid = unityMessage.uuid.Value;
-                    if (awaitingRequests.TryGetValue(uuid, out m))
+                    if (this.awaitingRequests.TryGetValue(uuid, out m))
                     {
                         this.awaitingRequests.Remove(uuid);
                         m?.Invoke(unityMessage);

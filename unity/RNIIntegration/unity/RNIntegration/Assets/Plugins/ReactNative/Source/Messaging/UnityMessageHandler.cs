@@ -1,5 +1,4 @@
 ﻿using fastJSON;
-using System.Dynamic;
 
 namespace ReactNative
 {

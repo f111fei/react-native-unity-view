@@ -18,7 +18,12 @@ RCT_EXPORT_VIEW_PROPERTY(onMessage, RCTDirectEventBlock)
 
 - (UIView *)view
 {
-    return [[RNUnityView alloc] init];
+    [self createUnity];
+    self.currentView = [[RNUnityView alloc] init];
+    if (self.isUnityReady) {
+        [self.currentView setUnityView: [GetAppController() unityView]];
+    }
+    return self.currentView;
 }
 
 - (dispatch_queue_t)methodQueue
@@ -37,7 +42,8 @@ RCT_EXPORT_VIEW_PROPERTY(onMessage, RCTDirectEventBlock)
                              UIApplicationDidEnterBackgroundNotification,
                              UIApplicationWillTerminateNotification,
                              UIApplicationWillResignActiveNotification,
-                             UIApplicationWillEnterForegroundNotification]) {
+                             UIApplicationWillEnterForegroundNotification,
+                             UIApplicationDidReceiveMemoryWarningNotification]) {
         
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(handleAppStateDidChange:)
@@ -62,21 +68,37 @@ RCT_EXPORT_VIEW_PROPERTY(onMessage, RCTDirectEventBlock)
         [unityAppController applicationDidBecomeActive:application];
     } else if ([notification.name isEqualToString:UIApplicationWillTerminateNotification]) {
         [unityAppController applicationWillTerminate:application];
+    } else if ([notification.name isEqualToString:UIApplicationDidReceiveMemoryWarningNotification]) {
+		[unityAppController applicationDidReceiveMemoryWarning:application];
+	}
+}
+
+- (void)handleUnityReady {
+    self.isUnityReady = YES;
+    if (self.currentView) {
+        [self.currentView setUnityView: [GetAppController() unityView]];
     }
+}
+
+- (void)createUnity {
+    if (UnityIsInited()) {
+        return;
+    }
+    UIApplication* application = [UIApplication sharedApplication];
+    // Always keep RN window in top
+    application.keyWindow.windowLevel = UIWindowLevelNormal + 1;
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleUnityReady) name:@"UnityReady" object:nil];
+    
+    InitUnity();
+    
+    UnityAppController *controller = GetAppController();
+    [controller application:application didFinishLaunchingWithOptions:self.bridge.launchOptions];
+    [controller applicationDidBecomeActive:application];
+    [RNUnityViewManager listenAppState];
 }
 
 - (void)setBridge:(RCTBridge *)bridge {
     _bridge = bridge;
-    
-    if (!UnityIsInited()) {
-        InitUnity();
-        UIApplication* application = [UIApplication sharedApplication];
-        UnityAppController *controller = GetAppController();
-        UIWindow* mainWindow = application.keyWindow;
-        [controller application:application didFinishLaunchingWithOptions:bridge.launchOptions];
-        [mainWindow makeKeyAndVisible];
-        [RNUnityViewManager listenAppState];
-    }
 }
 
 RCT_EXPORT_METHOD(postMessage:(nonnull NSNumber *)reactTag gameObject:(NSString *)gameObject methodName:(NSString *)methodName message:(NSString *)message)

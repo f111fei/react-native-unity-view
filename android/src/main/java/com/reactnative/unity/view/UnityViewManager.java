@@ -29,6 +29,7 @@ public class UnityViewManager extends SimpleViewManager<UnityView> implements Li
     private static boolean DONOT_RESUME = false;
 
     private ReactApplicationContext context;
+    private UnityPlayer player;
 
     UnityViewManager(ReactApplicationContext context) {
         super();
@@ -52,6 +53,9 @@ public class UnityViewManager extends SimpleViewManager<UnityView> implements Li
 
     @Override
     public void receiveCommand(UnityView root, int commandId, @Nullable ReadableArray args) {
+        if (player == null) {
+            return;
+        }
         switch (commandId) {
             case COMMAND_POST_MESSAGE:
                 String gameObject = args.getString(0);
@@ -60,11 +64,11 @@ public class UnityViewManager extends SimpleViewManager<UnityView> implements Li
                 UnityUtils.postMessage(gameObject, methodName, message);
                 break;
             case COMMAND_PAUSE:
-                UnityUtils.getPlayer().pause();
+                player.pause();
                 DONOT_RESUME = true;
                 break;
             case COMMAND_RESUME:
-                UnityUtils.getPlayer().resume();
+                player.resume();
                 DONOT_RESUME = false;
                 break;                
         }
@@ -72,9 +76,21 @@ public class UnityViewManager extends SimpleViewManager<UnityView> implements Li
 
     @Override
     protected UnityView createViewInstance(ThemedReactContext reactContext) {
-        UnityView view = new UnityView(reactContext, UnityUtils.getPlayer());
+        final UnityView view = new UnityView(reactContext);
         UnityUtils.addUnityEventListener(view);
         view.addOnAttachStateChangeListener(this);
+
+        if (player != null) {
+            view.setUnityPlayer(player);
+        } else {
+            UnityUtils.createPlayer(context.getCurrentActivity(), new UnityUtils.CreateCallback() {
+                @Override
+                public void onReady() {
+                    player = UnityUtils.getPlayer();
+                    view.setUnityPlayer(player);
+                }
+            });
+        }
         return view;
     }
 
@@ -94,23 +110,23 @@ public class UnityViewManager extends SimpleViewManager<UnityView> implements Li
 
     @Override
     public void onHostResume() {
-        if (!UnityUtils.hasUnityPlayer()) {
-            UnityUtils.createPlayer(context.getCurrentActivity());
-        } else {
-            if (!DONOT_RESUME) {
-                UnityUtils.getPlayer().resume();
-            }
+        if (!DONOT_RESUME && player != null) {
+            player.resume();
         }
     }
 
     @Override
     public void onHostPause() {
-        UnityUtils.getPlayer().pause();
+        if (player != null) {
+            player.pause();
+        }
     }
 
     @Override
     public void onHostDestroy() {
-        UnityUtils.getPlayer().quit();
+        if (player != null) {
+            player.quit();
+        }
     }
 
     @Override
@@ -121,7 +137,9 @@ public class UnityViewManager extends SimpleViewManager<UnityView> implements Li
             handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    UnityUtils.getPlayer().pause();
+                if (player != null) {
+                    player.pause();
+                }
                 }
             }, 300); //TODO: 300 is the right one?
         }

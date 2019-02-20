@@ -14,8 +14,10 @@
 
 @interface RNUnityView : UIView<UnityEventListener>
 
-@property (nonatomic, strong) UIView* uView;
+@property (nonatomic, strong) UnityView* uView;
 
 @property (nonatomic, copy) RCTDirectEventBlock onMessage;
+
+- (void)setUnityView:(UnityView *)view;
 
 @end

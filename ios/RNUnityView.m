@@ -14,7 +14,6 @@
 {
     self = [super initWithFrame:frame];
     if (self){
-        self.uView = (UIView*)GetAppController().unityView;
         [UnityUtils addUnityEventListener:self];
     }
     return self;
@@ -25,13 +24,19 @@
     [UnityUtils removeUnityEventListener:self];
 }
 
+- (void)setUnityView:(UnityView *)view
+{
+    self.uView = view;
+    [self setNeedsLayout];
+}
+
 - (void)layoutSubviews
 {
     [super layoutSubviews];
-    [self.uView removeFromSuperview];
-    self.uView.frame = self.bounds;
-    [self insertSubview:self.uView atIndex:0];
-    [self.uView setNeedsLayout];
+    [(UIView *)self.uView removeFromSuperview];
+    [self insertSubview:(UIView *)self.uView atIndex:0];
+    ((UIView *)self.uView).frame = self.bounds;
+    [(UIView *)self.uView setNeedsLayout];
 }
 
 - (void)onMessage:(NSString *)message {

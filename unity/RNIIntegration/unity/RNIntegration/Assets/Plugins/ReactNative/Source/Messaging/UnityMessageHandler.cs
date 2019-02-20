@@ -1,4 +1,5 @@
 ﻿using fastJSON;
+using System.Dynamic;
 
 namespace ReactNative
 {
@@ -40,7 +41,7 @@ namespace ReactNative
         /// Set response message to send back to the client.
         /// </summary>
         /// <param name="data">The response data</param>
-        public abstract void SetResponse(DynamicJson data);
+        public abstract void SetResponse(object data = null);
 
         #endregion
     }

@@ -92,6 +92,11 @@ public static class XcodePostBuild
             return;
         }
 
+        if (!pathToBuiltProject.Contains("ios/UnityExport"))
+        {
+            return;
+        }
+
         PatchUnityNativeCode(pathToBuiltProject);
 
         UpdateUnityIOSExports(pathToBuiltProject);

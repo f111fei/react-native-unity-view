@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 #if !SILVERLIGHT
 using System.Data;
 #endif
 using System.Globalization;
 using System.IO;
-using System.Reflection;
+using System.Collections.Specialized;
 
 #if UNITY_WSA
 using TypeR = System.Reflection.TypeInfo;
@@ -33,7 +32,7 @@ namespace fastJSON
         /// <summary>
         /// Serialize null values to the output (default = True)
         /// </summary>
-        public bool SerializeNullValues = true;
+        public bool SerializeNullValues = false;
         /// <summary>
         /// Use the UTC date format (default = True)
         /// </summary>
@@ -41,7 +40,7 @@ namespace fastJSON
         /// <summary>
         /// Show the readonly properties of types in the output (default = False)
         /// </summary>
-        public bool ShowReadOnlyProperties = false;
+        public bool ShowReadOnlyProperties = true;
         /// <summary>
         /// Use the $types extension to optimise the output json (default = True)
         /// </summary>
@@ -54,11 +53,11 @@ namespace fastJSON
         /// <summary>
         /// Anonymous types have read only properties 
         /// </summary>
-        public bool EnableAnonymousTypes = false;
+        public bool EnableAnonymousTypes = true;
         /// <summary>
         /// Enable fastJSON extensions $types, $type, $map (default = True)
         /// </summary>
-        public bool UseExtensions = true;
+        public bool UseExtensions = false;
         /// <summary>
         /// Use escaped unicode i.e. \uXXXX format for non ASCII characters (default = True)
         /// </summary>
@@ -299,10 +298,18 @@ namespace fastJSON
         /// <returns></returns>
         public static T ToObject<T>(DynamicJson json)
         {
-            var deserializer = new deserializer(Parameters);
-            var o = deserializer.ToObject(json.AsCollection(), typeof(T), null);
-            return deserializer.ToObject<T>(o, typeof(T));
+            if (typeof(T) == typeof(DynamicJson))
+            {
+                return (T)Convert.ChangeType(json, typeof(T));
+            }
+            else
+            {
+                var deserializer = new deserializer(Parameters);
+                var o = deserializer.ToObject(json.AsCollection(), typeof(T), null);
+                return deserializer.ToObject<T>(o, typeof(T));
+            }
         }
+
         /// <summary>
         /// Create an object of type from the dynamic json instance
         /// </summary>
@@ -699,7 +706,7 @@ namespace fastJSON
 
         private object RootArray(object parse, Type type)
         {
-            var it = type.GetElementType();
+            Type it = type.GetElementType();
             IList o = (IList)Reflection.Instance.FastCreateInstance(typeof(List<>).MakeGenericType(it));
             DoParseList(parse, it, o);
             var array = Array.CreateInstance(it, o.Count);
@@ -719,7 +726,7 @@ namespace fastJSON
                 t2 = gtypes[1];
             }
 
-            Type arraytype = t2.GetElementType();
+            var arraytype = t2.GetElementType();
             if (parse is Dictionary<string, object>)
             {
                 IDictionary o = (IDictionary)Reflection.Instance.FastCreateInstance(type);
@@ -1007,7 +1014,11 @@ namespace fastJSON
         private object CreateEnum(Type pt, object v)
         {
             // FEATURE : optimize create enum
+#if !SILVERLIGHT || UNITY_EDITOR || UNITY_ANDROID || UNITY_WSA || UNITY_IOS || UNITY_WEBGL
             return Enum.Parse(pt, v.ToString(), true);
+#else
+            return Enum.Parse(pt, v, true);
+#endif
         }
 
         private Guid CreateGuid(string s)
@@ -1315,4 +1326,5 @@ namespace fastJSON
 #endif
         #endregion
     }
+
 }

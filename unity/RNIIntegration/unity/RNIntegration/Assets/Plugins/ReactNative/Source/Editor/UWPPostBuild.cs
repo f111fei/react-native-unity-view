@@ -20,20 +20,12 @@ SOFTWARE.
 
 #if UNITY_WSA
 
-using System;
-using System.Linq;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
-
-using UnityEngine;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using UnityEditor;
 using UnityEditor.Callbacks;
-using UnityEditor.iOS.Xcode;
-using Application = UnityEngine.Application;
-using System.Xml.Linq;
-using System.Xml.XPath;
-using System.Xml;
 
 public static class UWPPostBuild
 {
@@ -41,6 +33,11 @@ public static class UWPPostBuild
     public static void OnPostBuild(BuildTarget target, string pathToBuiltProject)
     {
         if (target != BuildTarget.WSAPlayer)
+        {
+            return;
+        }
+
+        if (!pathToBuiltProject.Contains("windows/UnityExport"))
         {
             return;
         }
@@ -190,8 +187,39 @@ public static class UWPPostBuild
         {
             string cppProjectFile_Text = File.ReadAllText(cppProjectFile);
             XNamespace defaultNS = "http://schemas.microsoft.com/developer/msbuild/2003";
+            cppProjectFile_Text = Regex.Replace(cppProjectFile_Text, @"\$\(Configuration\)", @"$(DependencyConfiguration)");
+            cppProjectFile_Text = Regex.Replace(cppProjectFile_Text, @"\)UnityCommon\.props", @")\UnityCommon.props");
             XDocument csharpProject = XDocument.Parse(cppProjectFile_Text);
             XElement xamlRootParent = csharpProject.Root;
+
+            xamlRootParent.Elements(defaultNS + "Import")
+                .ToList()
+                .ForEach(m =>
+                {
+                    var projectAttr = m.Attribute("Project");
+                    if (projectAttr == null)
+                    {
+                        return;
+                    }
+
+                    var projectValue = projectAttr.Value;
+                    if (!projectValue.Contains("UnityCommon.props"))
+                    {
+                        return;
+                    }
+
+                    m.Remove();
+
+                    xamlRootParent.AddFirst(
+                        new XElement(defaultNS + "Import",
+                            new XAttribute("Condition", @"Exists('" + projectValue + @"')"),
+                            new XAttribute("Project", projectValue)));
+
+                    xamlRootParent.AddFirst(
+                        new XElement(defaultNS + "Import",
+                            new XAttribute("Condition", @"!Exists('" + projectValue + @"') And Exists('$(MSBuildThisFileDirectory)\..\..\UnityCommon.props')"),
+                            new XAttribute("Project", @"$(MSBuildThisFileDirectory)\..\..\UnityCommon.props")));
+                });
 
             xamlRootParent.Elements(defaultNS + "ItemGroup")
                 .SelectMany(m => m.Elements(defaultNS + "None"))

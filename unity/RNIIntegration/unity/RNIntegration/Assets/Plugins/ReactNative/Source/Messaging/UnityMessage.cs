@@ -37,5 +37,12 @@ namespace ReactNative
         /// <returns>The data in a given type.</returns>
         public T GetData<T>()
             => JSON.ToObject<T>(this.data);
+
+        /// <summary>
+        /// Converts message data to formatted JSON.
+        /// </summary>
+        /// <returns>The message in formatted JSON.</returns>
+        public override string ToString()
+            => JSON.ToNiceJSON(this);
     }
 }

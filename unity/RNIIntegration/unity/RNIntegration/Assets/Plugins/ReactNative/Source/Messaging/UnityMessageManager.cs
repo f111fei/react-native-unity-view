@@ -33,21 +33,8 @@ namespace ReactNative
             }
         }
 
+        private static bool instanceDestroyed = false;
         private static UnityMessageManager instance;
-        public static UnityMessageManager Instance
-        {
-            get
-            {
-                if (instance == null)
-                {
-                    GameObject go = GameObject.Find(GameObjectName) ?? new GameObject(GameObjectName);
-                    UnityEngine.Object.DontDestroyOnLoad(go);
-                    instance = go.AddComponent<UnityMessageManager>();
-                }
-
-                return instance;
-            }
-        }
 
         private readonly object stateLock = new object();
         private readonly Dictionary<string, Subscription[]> subscriptions = new Dictionary<string, Subscription[]>();
@@ -57,6 +44,13 @@ namespace ReactNative
 
         static UnityMessageManager()
         {
+            if (instance == null && !instanceDestroyed)
+            {
+                GameObject go = GameObject.Find(GameObjectName) ?? new GameObject(GameObjectName);
+                UnityEngine.Object.DontDestroyOnLoad(go);
+                instance = go.AddComponent<UnityMessageManager>();
+            }
+
 #if UNITY_WSA && !UNITY_EDITOR && ENABLE_WINMD_SUPPORT
             RNUnityViewBridge.BridgeBootstrapper.SetIL2CPPBridge(new UnityMessageManager.IL2CPPBridge());
 #endif
@@ -67,7 +61,7 @@ namespace ReactNative
         /// <summary>
         /// Event raised when unformtted message is received.
         /// </summary>
-        public event MessageDelegate OnMessage;
+        public static event MessageDelegate OnMessage;
 
         #endregion
 
@@ -80,27 +74,27 @@ namespace ReactNative
         /// <remarks>
         /// Message is expected to be in UTF8 encoding.
         /// </remarks>
-        public void Send(string message)
+        public static void Send(string message)
             => UnityMessageManager.onUnityMessage(message);
 
         /// <summary>
-        /// Sends message with optional data and response callback.
+        /// Sends message with optional data.
         /// </summary>
         /// <param name="id">The message id (identifying target).</param>
         /// <param name="data">(optional) The data attached to the message.</param>
-        /// <param name="onResponse">(optional) Callback called when target replies back.</param>
         /// <remarks>
         /// Message format:
         ///  {
         ///    "id": MESSAGE_TARGET_ID, // <paramref name="id" />
         ///    "data": SERIALIZED_DATA, // <paramref name="data" />
-        ///    "uuid": UNIQUE_REQUEST_IDENTIFIER // Exists only when <paramref name="onResponse" /> callback is provided
         ///  }
         ///  
-        /// Message is automatically prefixed with <see cref="UnityMessageManager.MessagePrefix" /> 
+        /// Raw message is automatically prefixed with <see cref="UnityMessageManager.MessagePrefix" /> 
         /// constant to distinguish it from unformatted messages.
         /// </remarks>
-        public void Send(string id, DynamicJson data = null)
+        public static void Send(string id, object data = null)
+            => instance?.SendInternal(id, data);
+        private void SendInternal(string id, object data)
         {
             string json = "{" +
                 $"\"{nameof(UnityMessage.id)}\":{JSON.ToJSON(id)}" +
@@ -129,8 +123,8 @@ namespace ReactNative
         /// Message is automatically prefixed with <see cref="UnityMessageManager.MessagePrefix" /> 
         /// constant to distinguish it from unformatted messages.
         /// </remarks>
-        public Task<DynamicJson> SendAsync(string id, DynamicJson data = null, CancellationToken cancellationToken = default(CancellationToken))
-            => this.SendInternalAsync(id, data, cancellationToken, (response) => response.data);
+        public static Task<DynamicJson> SendAsync(string id, object data = null, CancellationToken cancellationToken = default(CancellationToken))
+            => instance?.SendInternalAsync(id, data, cancellationToken, (response) => response.data) ?? Task.FromResult(default(DynamicJson));
 
         /// <summary>
         /// Sends request message with optional data.
@@ -149,8 +143,8 @@ namespace ReactNative
         /// Message is automatically prefixed with <see cref="UnityMessageManager.MessagePrefix" /> 
         /// constant to distinguish it from unformatted messages.
         /// </remarks>
-        public Task<T> SendAsync<T>(string id, DynamicJson data = null, CancellationToken cancellationToken = default(CancellationToken))
-            => this.SendInternalAsync(id, data, cancellationToken, (response) => response.GetData<T>());
+        public static Task<T> SendAsync<T>(string id, object data = null, CancellationToken cancellationToken = default(CancellationToken))
+            => instance?.SendInternalAsync(id, data, cancellationToken, (response) => response.GetData<T>()) ?? Task.FromResult(default(T));
 
         /// <summary>
         /// Subscribes a new message handler to listen for a given message id.
@@ -158,7 +152,9 @@ namespace ReactNative
         /// <param name="id">The message id.</param>
         /// <param name="handler">The message handler.</param>
         /// <returns>Disposable instance that unsubscribes handler when disposed.</returns>
-        public IDisposable Subscribe(string id, UnityMessageDelegate handler)
+        public static IDisposable Subscribe(string id, UnityMessageDelegate handler)
+            => instance?.SubscribeInternal(id, handler);
+        private IDisposable SubscribeInternal(string id, UnityMessageDelegate handler)
         {
             lock (this.stateLock)
             {
@@ -193,11 +189,68 @@ namespace ReactNative
             }
         }
 
+#if !UNITY_EXPORT
+        public static void Inject(string data)
+            => instance?.InjectInternal(data);
+        private void InjectInternal(string data)
+            => this.onMessage(data);
+
+        public static void Inject(string id, object data = null)
+            => instance?.InjectInternal(id, data);
+        private void InjectInternal(string id, object data)
+        {
+            string json = "{" +
+                $"\"{nameof(UnityMessage.id)}\":{JSON.ToJSON(id)}" +
+                (data != null
+                    ? $",\"{nameof(data)}\":{JSON.ToJSON(data)}"
+                    : string.Empty) +
+                "}";
+
+            this.onRNMessage(MessagePrefix + json);
+        }
+
+        public static Task<T> InjectAsync<T>(string id, object data = null, CancellationToken cancellationToken = default(CancellationToken))
+            => instance?.InjectInternalAsync<T>(id, (int)(UnityEngine.Random.value * 1000000), data, cancellationToken);
+        public static Task<T> InjectAsync<T>(string id, int uuid, object data = null, CancellationToken cancellationToken = default(CancellationToken))
+            => instance?.InjectInternalAsync<T>(id, uuid, data, cancellationToken);
+        private async Task<T> InjectInternalAsync<T>(string id, int uuid, object data, CancellationToken cancellationToken)
+        {
+            TaskCompletionSource<T> result = new TaskCompletionSource<T>();
+            using (cancellationToken.Register(() => result.TrySetCanceled()))
+            {
+                string json = "{" +
+                $"\"{nameof(UnityMessage.id)}\":{JSON.ToJSON(id)}" +
+                $",\"{nameof(UnityMessage.uuid)}\":{uuid},\"type\":{(int)UnityMessageType.Request}" +
+                (data != null
+                    ? $",\"{nameof(data)}\":{JSON.ToJSON(data)}"
+                    : string.Empty) +
+                "}";
+
+                this.awaitingRequests.Add(uuid, (response) => result.TrySetResult(response.GetData<T>()));
+
+                this.onRNMessage(MessagePrefix + json);
+
+                this.SendRequest(id, uuid, data);
+
+                return await result.Task;
+            }
+        }
+#endif
+        #endregion
+
+        #region Unity methods
+
+        private void OnDestroy()
+        {
+            instanceDestroyed = true;
+            instance = null;
+        }
+
         #endregion
 
         #region Private methods
 
-        private async Task<T> SendInternalAsync<T>(string id, DynamicJson data, CancellationToken cancellationToken, Func<UnityMessage, T> responseHandler)
+        private async Task<T> SendInternalAsync<T>(string id, object data, CancellationToken cancellationToken, Func<UnityMessage, T> responseHandler)
         {
             TaskCompletionSource<T> result = new TaskCompletionSource<T>();
             using (cancellationToken.Register(() => result.TrySetCanceled()))
@@ -217,7 +270,7 @@ namespace ReactNative
         /// <param name="id">The unity message ID.</param>
         /// <param name="uuid">The unique request ID.</param>
         /// <param name="data">THe optional request data.</param>
-        private void SendRequest(string id, int uuid, DynamicJson data)
+        private void SendRequest(string id, int uuid, object data)
         {
             string json = "{" +
                 $"\"{nameof(UnityMessage.id)}\":{JSON.ToJSON(id)}" +
@@ -236,7 +289,7 @@ namespace ReactNative
         /// <param name="id">The unity message ID.</param>
         /// <param name="uuid">The unique request ID.</param>
         /// <param name="data">THe optional response data.</param>
-        private void SendResponse(string id, int uuid, DynamicJson data)
+        private void SendResponse(string id, int uuid, object data)
         {
             string json = "{" +
                 $"\"{nameof(UnityMessage.id)}\":{JSON.ToJSON(id)}" +
@@ -281,15 +334,15 @@ namespace ReactNative
         /// Handles message forwarding it to all 
         /// </summary>
         /// <param name="message"></param>
-        public void onMessage(string message)
-            => this.OnMessage?.Invoke(message);
+        private void onMessage(string message)
+            => UnityMessageManager.OnMessage?.Invoke(message);
 
         /// <summary>
         /// Handles JSON message as <see cref="UnityMessage" /> instance (with optional callback).
         /// Message will be dispatched only to listeners of a given <see cref="UnityMessage.id" />.
         /// </summary>
         /// <param name="message">The JSON message.</param>
-        public void onRNMessage(string message)
+        private void onRNMessage(string message)
         {
             try
             {
@@ -338,7 +391,7 @@ namespace ReactNative
                 }
                 else
                 {
-                    Debug.LogWarning("Unknown message id.");
+                    Debug.LogWarning($"Unknown message id: {unityMessage.id}.");
                 }
             }
             catch (Exception e)
@@ -352,18 +405,26 @@ namespace ReactNative
         /// Send serialized message to React Native app.
         /// </summary>
         /// <param name="message">The serialized message to send.</param>
-#if UNITY_IOS && !UNITY_EDITOR
+#if UNITY_EXPORT && !UNITY_EDITOR
+#if UNITY_IOS
         [System.Runtime.InteropServices.DllImport("__Internal")]
         private static extern void onUnityMessage (string message);
-#elif UNITY_ANDROID && !UNITY_EDITOR
-        private static void onUnityMessage (string message)
+#elif UNITY_ANDROID
+        private static void onUnityMessage(string message)
         {
-            using (AndroidJavaClass jc = new AndroidJavaClass("com.reactnative.unity.view.UnityUtils"))
+            try
             {
-                jc.CallStatic("onUnityMessage", message);
+                using (AndroidJavaClass jc = new AndroidJavaClass("com.reactnative.unity.view.UnityUtils"))
+                {
+                    jc.CallStatic("onUnityMessage", message);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
             }
         }
-#elif UNITY_WSA && !UNITY_EDITOR && ENABLE_WINMD_SUPPORT
+#elif UNITY_WSA && ENABLE_WINMD_SUPPORT
         private static void onUnityMessage(string message)
         {
             RNUnityViewBridge.BridgeBootstrapper.GetDotNetBridge()?.onMessage(message);
@@ -372,6 +433,39 @@ namespace ReactNative
         private static void onUnityMessage(string message)
         {
             Debug.Log("onUnityMessage: " + message);
+        }
+#endif
+#else
+        private static void onUnityMessage(string message)
+        {
+            if (!message.StartsWith(MessagePrefix))
+            {
+                Debug.Log("Unformatted: " + message);
+                return;
+            }
+
+            message = message.Substring(MessagePrefix.Length);
+
+            UnityMessage unityMessage = JSON.ToObject<UnityMessage>(message);
+            if (unityMessage.type == UnityMessageType.Response)
+            {
+                // handle callback message
+                UnityResponseDelegate m;
+                var uuid = unityMessage.uuid.Value;
+                if (instance.awaitingRequests.TryGetValue(uuid, out m))
+                {
+                    instance.awaitingRequests.Remove(uuid);
+                    m?.Invoke(unityMessage);
+                }
+                else
+                {
+                    Debug.LogWarning("Unknown message uuid.");
+                }
+            }
+            else
+            {
+                Debug.Log("onUnityMessage: " + message);
+            }
         }
 #endif
 
@@ -410,14 +504,14 @@ namespace ReactNative
             public UnityMessageHandlerImpl(UnityMessage message)
                 : base(message) { }
 
-            public override void SetResponse(DynamicJson data)
+            public override void SetResponse(object data)
             {
                 if (this.IsRequest && this.message.uuid.HasValue)
                 {
-                    UnityMessageManager.Instance.SendResponse(
+                    UnityMessageManager.instance?.SendResponse(
                         this.message.id,
                         this.message.uuid.Value,
-                        this.message.data);
+                        data);
                 }
                 else
                 {
@@ -436,15 +530,15 @@ namespace ReactNative
                 {
                     if (method == nameof(UnityMessageManager.onMessage))
                     {
-                        UnityMessageManager.Instance.onMessage(message);
+                        UnityMessageManager.instance?.onMessage(message);
                     }
                     else if (method == nameof(UnityMessageManager.onRNMessage))
                     {
-                        UnityMessageManager.Instance.onRNMessage(message);
+                        UnityMessageManager.instance?.onRNMessage(message);
                     }
                     else
                     {
-                        o = UnityMessageManager.Instance.gameObject;
+                        o = UnityMessageManager.instance?.gameObject;
                     }
                 }
                 else

@@ -44,12 +44,12 @@ namespace fastJSON
             var index = indexes[0];
             if (index is int)
             {
-                result = _list[(int)index];
+                result = _list[(int) index];
             }
             else
             {
-                result = _dictionary[(string)index];
-            }
+                result = _dictionary[(string) index];
+            } 
             if (result is IDictionary<string, object>)
                 result = new DynamicJson(result as IDictionary<string, object>);
             return true;
@@ -83,7 +83,7 @@ namespace fastJSON
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            foreach (var o in _list)
+            foreach(var o in _list)
             {
                 yield return new DynamicJson(o as IDictionary<string, object>);
             }

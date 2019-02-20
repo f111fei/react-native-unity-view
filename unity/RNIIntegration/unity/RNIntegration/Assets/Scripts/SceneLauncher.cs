@@ -9,25 +9,25 @@ public class SceneLauncher : MonoBehaviour
 
     void Awake()
     {
-        UnityMessageManager.Instance.Send("launcher", new JsonObject { ["state"] = "awake" });
+        UnityMessageManager.Send("launcher", new JsonObject { ["state"] = "awake" });
     }
 
     void OnEnable()
     {
-        UnityMessageManager.Instance.OnMessage += this.OnReceiveMessage;
-        this.subscription = UnityMessageManager.Instance.Subscribe("launcher", this.OnReceiveMessage);
-        UnityMessageManager.Instance.Send("launcher", new JsonObject { ["state"] = "enable" });
+        UnityMessageManager.OnMessage += this.OnReceiveMessage;
+        this.subscription = UnityMessageManager.Subscribe("launcher", this.OnReceiveMessage);
+        UnityMessageManager.Send("launcher", new JsonObject { ["state"] = "enable" });
     }
 
     void Start()
     {
-        UnityMessageManager.Instance.Send("launcher", new JsonObject { ["state"] = "start" });
+        UnityMessageManager.Send("launcher", new JsonObject { ["state"] = "start" });
     }
 
     void OnDisable()
     {
-        UnityMessageManager.Instance.Send("launcher", new JsonObject { ["state"] = "disable" });
-        UnityMessageManager.Instance.OnMessage -= this.OnReceiveMessage;
+        UnityMessageManager.Send("launcher", new JsonObject { ["state"] = "disable" });
+        UnityMessageManager.OnMessage -= this.OnReceiveMessage;
         this.subscription?.Dispose();
         this.subscription = null;
     }

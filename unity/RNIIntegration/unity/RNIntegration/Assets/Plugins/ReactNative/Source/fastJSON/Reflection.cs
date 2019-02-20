@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 #if !ENABLE_IL2CPP && !UNITY_WSA
 using System.Reflection.Emit;
 #endif
@@ -20,6 +19,7 @@ using TypeR = System.Reflection.TypeInfo;
 #else
 using TypeR = System.Type;
 #endif
+using System.Collections.Specialized;
 
 namespace fastJSON
 {
@@ -138,12 +138,12 @@ namespace fastJSON
         }
 #endif
 
-#region bjson custom types
+        #region bjson custom types
         internal UnicodeEncoding unicode = new UnicodeEncoding();
         internal UTF8Encoding utf8 = new UTF8Encoding();
-#endregion
+        #endregion
 
-#region json custom types
+        #region json custom types
         // JSON custom
         internal SafeDictionary<Type, Serialize> _customSerializer = new SafeDictionary<Type, Serialize>();
         internal SafeDictionary<Type, Deserialize> _customDeserializer = new SafeDictionary<Type, Deserialize>();
@@ -173,7 +173,7 @@ namespace fastJSON
             Serialize s;
             return _customSerializer.TryGetValue(t, out s);
         }
-#endregion
+        #endregion
 
         public Type GetGenericTypeDefinition(Type t)
         {
@@ -345,7 +345,7 @@ namespace fastJSON
             return conversionType;
         }
 
-#region [   PROPERTY GET SET   ]
+        #region [   PROPERTY GET SET   ]
 
         internal string GetTypeAssemblyName(Type t)
         {
@@ -779,7 +779,7 @@ namespace fastJSON
 
         //    return false;
         //}
-#endregion
+        #endregion
 
         internal void ResetPropertyCache()
         {

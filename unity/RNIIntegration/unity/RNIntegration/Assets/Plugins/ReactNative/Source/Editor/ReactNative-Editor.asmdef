@@ -1,0 +1,10 @@
+{
+    "name": "ReactNative-Editor",
+    "references": [
+        "ReactNative"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}

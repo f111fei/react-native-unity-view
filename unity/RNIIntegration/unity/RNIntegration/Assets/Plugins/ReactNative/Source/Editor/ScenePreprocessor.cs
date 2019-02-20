@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEngine;
 
-public class ScenePreprocessor
+public static class ScenePreprocessor
 {
     [PostProcessSceneAttribute(0)]
     public static void OnPostprocessScene()

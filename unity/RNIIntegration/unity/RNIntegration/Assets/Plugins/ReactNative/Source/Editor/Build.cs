@@ -3,11 +3,10 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEditor;
-using UnityEngine;
 using Application = UnityEngine.Application;
 using BuildResult = UnityEditor.Build.Reporting.BuildResult;
 
-public class Build : MonoBehaviour
+public static class Build
 {
     public static BuildTargetGroup? CurrentGroup = null;
 

@@ -408,42 +408,52 @@ namespace ReactNative
                 {
                     lock (this.stateLock)
                     {
-                        if (this.subscriptions.TryGetValue(unityMessage.id, out subscriptionList) && subscriptionList.Length > 0)
+                        var args = new UnityMessageHandlerImpl(unityMessage);
+
+                        try
                         {
                             // Handle as incomming message or request
-                            var args = new UnityMessageHandlerImpl(unityMessage);
-
-                            if (unityMessage.IsRequest)
+                            if (this.subscriptions.TryGetValue(unityMessage.id, out subscriptionList) && subscriptionList.Length > 0)
                             {
-                                // Remember request for incomming cancelation handling
-                                this.AddIncommingRequest(unityMessage.uuid.Value, args);
-                            }
-
-                            try
-                            {
-                                foreach (Subscription s in subscriptionList)
+                                if (unityMessage.IsRequest)
                                 {
-                                    s.handler.Invoke(args);
+                                    // Remember request for incomming cancelation handling
+                                    this.AddIncommingRequest(unityMessage.uuid.Value, args);
+                                }
+
+                                try
+                                {
+                                    foreach (Subscription s in subscriptionList)
+                                    {
+                                        s.handler.Invoke(args);
+                                    }
+                                }
+                                catch (Exception e)
+                                {
+                                    Debug.LogError($"Failed to handle incoming message:\n{e}", this);
+
+                                    if (args.IsRequest && !args.IsDeferred && !args.ResponseSent)
+                                    {
+                                        args.SendError(e);
+                                    }
                                 }
                             }
-                            catch (Exception e)
+                            else
                             {
-                                Debug.LogError($"Failed to handle incoming message:\n{e}", this);
-
-                                if (args.IsRequest && !args.IsDeferred && !args.ResponseSent)
+                                if (args.IsRequest)
                                 {
-                                    args.SendError(e);
+                                    args.SendError(new ArgumentException("Invalid message ID.", nameof(UnityMessage.id)));
                                 }
-                            }
 
+                                Debug.LogError($"Unknown message id: {unityMessage.id}.", this);
+                            }
+                        }
+                        finally
+                        {
                             if (!args.IsDeferred)
                             {
                                 args.Dispose();
                             }
-                        }
-                        else
-                        {
-                            Debug.LogError($"Unknown message id: {unityMessage.id}.", this);
                         }
                     }
                 }
@@ -723,7 +733,7 @@ namespace ReactNative
         /// <param name="id">The unity message ID.</param>
         /// <param name="uuid">The unique request ID.</param>
         /// <param name="error">The optional response data.</param>
-        private static void SendError(string id, int uuid, Exception error, string memberName, string sourceFilePath, int sourceLineNumber)
+        private static void SendError(string id, int uuid, Exception error)
         {
             string json = "{" +
                 $"\"{nameof(UnityMessage.id)}\":{JSON.ToJSON(id)}" +

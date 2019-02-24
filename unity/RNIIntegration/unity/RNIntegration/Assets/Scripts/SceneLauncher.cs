@@ -49,7 +49,7 @@ public class SceneLauncher : MonoBehaviour
         }
     }
 
-    private void OnReceiveMessage(UnityMessageHandler handler)
+    private void OnReceiveMessage(IUnityMessageHandler handler)
     {
         if (this.backgroundColor != Color.grey)
         {

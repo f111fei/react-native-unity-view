@@ -67,11 +67,7 @@ namespace ReactNative
                 }
             }
 
-            public void SendError(
-                Exception error,
-                [CallerMemberName] string memberName = "",
-                [CallerFilePath] string sourceFilePath = "",
-                [CallerLineNumber] int sourceLineNumber = 0)
+            public void SendError(UnityRequestException error)
             {
                 if (this.IsRequest)
                 {
@@ -79,15 +75,26 @@ namespace ReactNative
                     UnityMessageManager.SendError(
                         this.Message.id,
                         this.Message.uuid.Value,
-                        error,
-                        memberName,
-                        sourceFilePath,
-                        sourceLineNumber);
+                        error);
                 }
                 else
                 {
                     Debug.LogError("This message is not a request type.");
                 }
+            }
+
+            public void SendError(
+                Exception error,
+                [CallerMemberName] string memberName = "",
+                [CallerFilePath] string sourceFilePath = "",
+                [CallerLineNumber] int sourceLineNumber = 0)
+            {
+                this.SendError(
+                    new UnityRequestException(
+                        error,
+                        memberName,
+                        sourceFilePath,
+                        sourceLineNumber));
             }
 
             public void Dispose()

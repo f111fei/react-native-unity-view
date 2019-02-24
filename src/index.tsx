@@ -1,9 +1,13 @@
-import * as React from "react";
-import { requireNativeComponent, ViewProperties, findNodeHandle, NativeModules, NativeSyntheticEvent } from 'react-native';
 import * as PropTypes from "prop-types";
-const { ViewPropTypes } = require('react-native');
-
+import * as React from "react";
+import { requireNativeComponent, ViewProperties, findNodeHandle, NativeModules, NativeSyntheticEvent, ViewPropTypes } from 'react-native';
+import { Observable, Subscriber, TeardownLogic } from 'rxjs';
 const { UIManager } = NativeModules;
+
+declare var global: any;
+var isDebug = function () {
+    return global !== undefined && global.DEBUG !== undefined;
+}
 
 export interface UnityViewMessageEventData {
     message: string;
@@ -22,6 +26,7 @@ export interface UnityMessage {
     readonly type: UnityMessageType;
     readonly uuid?: number;
     readonly data?: any;
+
     isSimple(): boolean;
     isRequest(): boolean;
     isRequestCompletion(): boolean;
@@ -30,10 +35,32 @@ export interface UnityMessage {
     isError(): boolean;
 }
 
-export interface UnityRequest {
-    id: string;
-    type: UnityMessageType;
-    data?: any;
+export interface IUnityRequest {
+    readonly id: string;
+    readonly type: UnityMessageType;
+    readonly data?: any;
+}
+
+export class UnityRequest implements IUnityRequest {
+    private m_id: string;
+    private m_type: UnityMessageType;
+    private m_data: any;
+
+    public constructor(id: string, data?: any, type: UnityMessageType = UnityMessageType.Request) {
+        this.m_id = id;
+        this.m_data = data;
+        this.m_type = type;
+    }
+
+    public get id(): string {
+        return this.m_id;
+    }
+    public get type(): UnityMessageType {
+        return this.m_type;
+    }
+    public get data(): any {
+        return this.m_data;
+    }
 }
 
 let sequence = 0;
@@ -44,29 +71,45 @@ function generateUuid() {
 
 interface ResponseCallback {
     id: string;
-    resolve: (response: UnityMessage) => void;
-    reject: (reason?: UnityMessage) => void;
-}
+    onNext: (response: UnityMessage) => void;
+    onError: (reason?: UnityMessage) => void;
+    onComplete: () => void;
+};
 
 const responseCallbackMessageMap: {
     [uuid: number]: ResponseCallback;
 } = {};
+const removeResponseCallback = function (uuid: number | string) {
+    if (responseCallbackMessageMap[uuid]) {
+        delete responseCallbackMessageMap[uuid];
+    }
+}
 
 const requestCallbackMessageMap: {
     [uuid: number]: UnityMessageHandlerImpl;
 } = {};
+const removeRequestCallback = function (uuid: number | string) {
+    if (requestCallbackMessageMap[uuid]) {
+        delete requestCallbackMessageMap[uuid];
+    }
+}
 
 const messagePrefix = '@UnityMessage@';
 
 export interface UnityViewProps extends ViewProperties {
     /** 
-     * Receive message from unity. 
+     * Receive plain text message from unity. 
      */
     onMessage?: (message: string) => void;
+
+    /** 
+    * Receive JSON message or request from unity. 
+    */
     onUnityMessage?: (handler: UnityMessageHandler) => void;
 }
 
 export interface UnityMessageHandler {
+    readonly isCanceled: boolean;
     readonly isRequest: boolean;
     readonly message: UnityMessage;
     sendResponse(data: any): void;
@@ -182,13 +225,13 @@ class UnityMessageHandlerImpl implements UnityMessageHandler {
     }
 
     private dispose(): void {
-        if (!this.m_responseSent) {
-            this.m_responseSent = true;
-            this.sendResponse();
-        }
+        if (this.isRequest && this.message.uuid) {
+            if (!this.m_responseSent) {
+                this.m_responseSent = true;
+                this.sendResponse();
+            }
 
-        if (this.message.uuid) {
-            delete requestCallbackMessageMap[this.message.uuid];
+            removeRequestCallback(this.message.uuid);
         }
     }
 }
@@ -210,24 +253,25 @@ export default class UnityView extends React.Component<UnityViewProps> {
     public componentWillUnmount() {
         for (var key in requestCallbackMessageMap) {
             let awaitEntry = requestCallbackMessageMap[key];
-            delete requestCallbackMessageMap[key];
+            removeRequestCallback(key);
             if (awaitEntry && awaitEntry.cancel) {
                 awaitEntry.cancel();
             }
         }
 
+        // Complete all subscription
         for (var key in responseCallbackMessageMap) {
             let awaitEntry = responseCallbackMessageMap[key];
-            delete responseCallbackMessageMap[key];
-            if (awaitEntry && awaitEntry.reject) {
-                awaitEntry.reject();
+            removeResponseCallback(key);
+            if (awaitEntry && awaitEntry.onComplete) {
+                awaitEntry.onComplete();
             }
         }
     }
 
     /**
      * Send Message to Unity.
-     * @param message The message will post.
+     * @param message The message to post.
      * @param gameObject (optional) The Name of GameObject. Also can be a path string.
      * @param methodName (optional) Method name in GameObject instance.
      */
@@ -254,17 +298,29 @@ export default class UnityView extends React.Component<UnityViewProps> {
 
     /**
      * Send Message to UnityMessageManager.
-     * @param message The message will post.
+     * @param request The request to post.
+     * @param gameObject (optional) The Name of GameObject. Also can be a path string.
+     * @param methodName (optional) Method name in GameObject instance.
      */
-
-    public postMessageAsync<T>(request: UnityRequest, gameObject?: string, methodName?: string): Promise<T>;
-    public postMessageAsync<T>(
-        id: string,
-        data: any,
-        gameObject?: string,
-        methodName?: string): Promise<T>;
-    public postMessageAsync<T>(id: string, type: UnityMessageType | number, data: any, gameObject?: string, methodName?: string): Promise<T>;
-    public postMessageAsync<T>(first: string | UnityRequest, second: any, third: any, fourth?: string, fifth?: string): Promise<T> {
+    public postMessageAsync<T>(request: IUnityRequest, gameObject?: string, methodName?: string): Observable<T>;
+    /**
+     * Send Message to UnityMessageManager.
+     * @param id The request target ID to post.
+     * @param data The request data to post.
+     * @param gameObject (optional) The Name of GameObject. Also can be a path string.
+     * @param methodName (optional) Method name in GameObject instance.
+     */
+    public postMessageAsync<T>(id: string, data: any, gameObject?: string, methodName?: string): Observable<T>;
+    /**
+    * Send Message to UnityMessageManager.
+    * @param id The request target ID to post.
+    * @param type The custom request type to post.
+    * @param data The request data to post.
+    * @param gameObject (optional) The Name of GameObject. Also can be a path string.
+    * @param methodName (optional) Method name in GameObject instance.
+    */
+    public postMessageAsync<T>(id: string, type: UnityMessageType | number, data: any, gameObject?: string, methodName?: string): Observable<T>;
+    public postMessageAsync<T>(first: string | IUnityRequest, second: any, third: any, fourth?: string, fifth?: string): Observable<T> {
         var id: string;
         var type: number;
         var data: any;
@@ -302,16 +358,29 @@ export default class UnityView extends React.Component<UnityViewProps> {
             gameObject = 'UnityMessageManager';
         }
 
-        return new Promise<T>((resolve, reject) => {
+        return new Observable<T>((subscriber: Subscriber<T>): TeardownLogic => {
+            var isCompleted: boolean = false;
             const uuid = generateUuid();
             responseCallbackMessageMap[uuid] = {
                 id: id,
-                resolve: (response: UnityMessage) => {
+                onNext: (response: UnityMessage) => {
                     var data = response.data as T;
-                    resolve(data);
+                    subscriber.next(data);
                 },
-                reject: reject
+                onError: (response: UnityMessage) => {
+                    // TODO: Add well defined error format
+                    subscriber.error(response);
+                },
+                onComplete: () => {
+                    isCompleted = true; // To block cancellation
+                    subscriber.complete();
+                }
             };
+
+            if (subscriber.closed) {
+                removeResponseCallback(uuid);
+                return;
+            }
 
             this.postMessageInternal(gameObject, methodName, messagePrefix + JSON.stringify({
                 id: id,
@@ -319,6 +388,19 @@ export default class UnityView extends React.Component<UnityViewProps> {
                 uuid: uuid,
                 data: data
             }));
+
+            // Return cancellation handler
+            return () => {
+                if (subscriber.closed && !isCompleted) {
+                    removeResponseCallback(uuid);
+                    // Cancel request when unsubscribed before getting a response
+                    this.postMessageInternal(gameObject, methodName, messagePrefix + JSON.stringify({
+                        id: id,
+                        type: UnityMessageType.Cancel,
+                        uuid: uuid
+                    }));
+                }
+            };
         });
     };
 
@@ -345,6 +427,14 @@ export default class UnityView extends React.Component<UnityViewProps> {
     };
 
     private postMessageInternal(gameObject: string, methodName: string, message: string) {
+        if (isDebug()) {
+            if (message.startsWith(messagePrefix)) {
+                console.log('Sending: ' + message.substr(messagePrefix.length));
+            } else {
+                console.log('Sending: ' + message);
+            }
+        }
+
         UIManager.dispatchViewManagerCommand(
             this.getViewHandle(),
             UIManager.UnityView.Commands.postMessage,
@@ -360,34 +450,44 @@ export default class UnityView extends React.Component<UnityViewProps> {
         let message = event.nativeEvent.message
         if (message.startsWith(messagePrefix)) {
             message = message.replace(messagePrefix, '');
+
+            if (isDebug()) {
+                console.log('Received: ' + message);
+            }
+
             var json = JSON.parse(message) as UnityMessage;
             var unityMessage = new UnityMessageImpl(json);
             if (unityMessage.isRequestCompletion()) {
                 if (unityMessage.isCancel()) {
                     const awaitEntry = requestCallbackMessageMap[unityMessage.uuid];
-                    if (awaitEntry) {
+                    if (awaitEntry && awaitEntry.cancel) {
                         awaitEntry.cancel();
                     }
                 } else {
                     // handle callback message
                     const awaitEntry = responseCallbackMessageMap[unityMessage.uuid];
                     if (awaitEntry) {
-                        delete responseCallbackMessageMap[unityMessage.uuid];
+                        removeResponseCallback(unityMessage.uuid);
                         if (unityMessage.isResponse()) {
-                            if (awaitEntry.resolve != null) {
-                                awaitEntry.resolve(unityMessage);
+                            if (awaitEntry.onNext) {
+                                awaitEntry.onNext(unityMessage);
                             }
                         } else if (unityMessage.isError()) {
-                            if (awaitEntry.reject != null) {
-                                awaitEntry.reject(unityMessage);
+                            if (awaitEntry.onError) {
+                                awaitEntry.onError(unityMessage);
                             }
-                        } else if (unityMessage.isCancel()) {
-                            /* No-op */
+                        } else {
+                            console.warn("Unknown message type: " + message)
+                        }
+
+                        if (awaitEntry.onComplete != null) {
+                            awaitEntry.onComplete();
                         }
                     }
                 }
             } else if (this.props.onUnityMessage) {
                 let handler = new UnityMessageHandlerImpl(this.getViewHandle(), unityMessage as UnityMessageImpl);
+
                 if (handler.isRequest) {
                     requestCallbackMessageMap[unityMessage.uuid] = handler;
                 }
@@ -395,6 +495,10 @@ export default class UnityView extends React.Component<UnityViewProps> {
                 this.props.onUnityMessage(handler);
             }
         } else {
+            if (isDebug()) {
+                console.log('Received: ' + message);
+            }
+
             if (this.props.onMessage) {
                 this.props.onMessage(message);
             }
@@ -418,4 +522,4 @@ export default class UnityView extends React.Component<UnityViewProps> {
     }
 }
 
-const NativeUnityView = requireNativeComponent<UnityViewProps>('UnityView', UnityView);
+const NativeUnityView = requireNativeComponent('UnityView');

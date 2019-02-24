@@ -52,7 +52,16 @@ namespace ReactNative
         /// <summary>
         /// Send error message to send back to the client.
         /// </summary>
-        /// <param name="data">The response data</param>
+        /// <param name="error">The error info</param>
+        void SendError(UnityRequestException error);
+
+        /// <summary>
+        /// Send error message to send back to the client.
+        /// </summary>
+        /// <param name="error">The error info</param>
+        /// <param name="memberName">The method where <see cref="SendError(Exception, string, string, int)"/> was called.</param>
+        /// <param name="sourceFilePath">The source file where <see cref="SendError(Exception, string, string, int)"/> was called.</param>
+        /// <param name="sourceLineNumber">The line number where <see cref="SendError(Exception, string, string, int)"/> was called.</param>
         void SendError(
             Exception error = null,
             [CallerMemberName] string memberName = "",

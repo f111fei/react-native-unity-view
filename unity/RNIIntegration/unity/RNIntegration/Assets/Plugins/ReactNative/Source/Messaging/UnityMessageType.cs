@@ -6,18 +6,29 @@
     public enum UnityMessageType : int
     {
         /// <summary>
-        /// Default.
+        /// Default message type that does not expect any response.
         /// </summary>
-        Undefined = 0,
+        Default = 0,
 
         /// <summary>
-        /// Message is a request and caller will await for response.
+        /// Message is a response to some request that was sent earlier.
         /// </summary>
-        Request = 1,
+        Response = 1,
 
         /// <summary>
-        /// Message is a response to some request sent earlier.
+        /// Message is a request cancellation notification.
         /// </summary>
-        Response = 2
+        Cancel = 2,
+
+        /// <summary>
+        /// Message describes an error that occurred on the other end.
+        /// </summary>
+        Error = 3,
+
+        /// <summary>
+        /// The ID of the first request message type free to use.
+        /// Values greather than this one can be used for implementing custom requests and message types.
+        /// </summary>
+        Request = 9
     }
 }

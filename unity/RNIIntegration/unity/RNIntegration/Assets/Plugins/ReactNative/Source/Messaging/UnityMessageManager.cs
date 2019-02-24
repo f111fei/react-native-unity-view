@@ -10,9 +10,9 @@ namespace ReactNative
 {
     public delegate void MessageDelegate(string message);
 
-    public delegate void UnityMessageDelegate(UnityMessageHandler handler);
+    public delegate void UnityMessageDelegate(IUnityMessageHandler handler);
 
-    public class UnityMessageManager : MonoBehaviour
+    public sealed partial class UnityMessageManager : MonoBehaviour
     {
         #region Constants
 
@@ -23,13 +23,13 @@ namespace ReactNative
 
         #region Fields
 
-        private static readonly object IDLock = new object();
-        private static int ID = 0;
-        private static int GetNextID()
+        private static readonly object UUIDLock = new object();
+        private static int UUID = 0;
+        private static int GetNextUUID()
         {
-            lock (IDLock)
+            lock (UUIDLock)
             {
-                return (++ID);
+                return (++UUID);
             }
         }
 
@@ -38,9 +38,12 @@ namespace ReactNative
 
         private readonly object stateLock = new object();
         private readonly Dictionary<string, Subscription[]> subscriptions = new Dictionary<string, Subscription[]>();
-        private readonly Dictionary<int, UnityResponseDelegate> awaitingRequests = new Dictionary<int, UnityResponseDelegate>();
+        private readonly Dictionary<int, TaskCompletionSource<UnityMessage>> sentRequests = new Dictionary<int, TaskCompletionSource<UnityMessage>>();
+        private readonly Dictionary<int, UnityMessageHandlerImpl> receivedRequests = new Dictionary<int, UnityMessageHandlerImpl>();
 
         #endregion
+
+        #region Constructors
 
         static UnityMessageManager()
         {
@@ -55,6 +58,8 @@ namespace ReactNative
             RNUnityViewBridge.BridgeBootstrapper.SetIL2CPPBridge(new UnityMessageManager.IL2CPPBridge());
 #endif
         }
+
+        #endregion
 
         #region Events
 
@@ -93,29 +98,19 @@ namespace ReactNative
         /// constant to distinguish it from unformatted messages.
         /// </remarks>
         public static void Send(string id, object data = null)
-            => instance?.SendInternal(id, data);
-        private void SendInternal(string id, object data)
-        {
-            string json = "{" +
-                $"\"{nameof(UnityMessage.id)}\":{JSON.ToJSON(id)}" +
-                (data != null
-                    ? $",\"{nameof(data)}\":{JSON.ToJSON(data)}"
-                    : string.Empty) +
-                "}";
-
-            UnityMessageManager.onUnityMessage(MessagePrefix + json);
-        }
+            => UnityMessageManager.SendPlainInternal(id, data);
 
         /// <summary>
         /// Sends request message with optional data.
         /// </summary>
         /// <param name="id">The message id (identifying target).</param>
-        /// <param name="data">(optional) The data attached to the message.</param>
+        /// <param name="data">The data attached to the message.</param>
         /// <returns>Response message from the target.</returns>
         /// <remarks>
         /// Message format:
         ///  {
         ///    "id": MESSAGE_TARGET_ID, // <paramref name="id" />
+        ///    "type": SERIALIZED_TYPE, // <paramref name="data.Type" />
         ///    "data": SERIALIZED_DATA, // <paramref name="data" />
         ///    "uuid": UNIQUE_REQUEST_IDENTIFIER // Exists only when <paramref name="onResponse" /> callback is provided
         ///  }
@@ -123,19 +118,21 @@ namespace ReactNative
         /// Message is automatically prefixed with <see cref="UnityMessageManager.MessagePrefix" /> 
         /// constant to distinguish it from unformatted messages.
         /// </remarks>
-        public static Task<DynamicJson> SendAsync(string id, object data = null, CancellationToken cancellationToken = default(CancellationToken))
-            => instance?.SendInternalAsync(id, data, cancellationToken, (response) => response.data) ?? Task.FromResult(default(DynamicJson));
+        public static Task<UnityMessage> SendAsync(string id, IUnityRequest data, CancellationToken cancellationToken = default(CancellationToken))
+            => UnityMessageManager.instance?.SendRequestAsync<UnityMessage>(id, data.Type(), data, cancellationToken);
 
         /// <summary>
         /// Sends request message with optional data.
         /// </summary>
         /// <param name="id">The message id (identifying target).</param>
+        /// <param name="type">The request type (to identify response).</param>
         /// <param name="data">(optional) The data attached to the message.</param>
         /// <returns>Response message from the target.</returns>
         /// <remarks>
         /// Message format:
         ///  {
         ///    "id": MESSAGE_TARGET_ID, // <paramref name="id" />
+        ///    "type": SERIALIZED_TYPE, // <paramref name="type" />
         ///    "data": SERIALIZED_DATA, // <paramref name="data" />
         ///    "uuid": UNIQUE_REQUEST_IDENTIFIER // Exists only when <paramref name="onResponse" /> callback is provided
         ///  }
@@ -143,8 +140,51 @@ namespace ReactNative
         /// Message is automatically prefixed with <see cref="UnityMessageManager.MessagePrefix" /> 
         /// constant to distinguish it from unformatted messages.
         /// </remarks>
-        public static Task<T> SendAsync<T>(string id, object data = null, CancellationToken cancellationToken = default(CancellationToken))
-            => instance?.SendInternalAsync(id, data, cancellationToken, (response) => response.GetData<T>()) ?? Task.FromResult(default(T));
+        public static Task<UnityMessage> SendAsync(string id, int type, object data = null, CancellationToken cancellationToken = default(CancellationToken))
+            => UnityMessageManager.instance?.SendRequestAsync<UnityMessage>(id, type, data, cancellationToken);
+
+        /// <summary>
+        /// Sends request message with optional data.
+        /// </summary>
+        /// <param name="id">The message id (identifying target).</param>
+        /// <param name="data">The data attached to the message.</param>
+        /// <returns>Response message from the target.</returns>
+        /// <remarks>
+        /// Message format:
+        ///  {
+        ///    "id": MESSAGE_TARGET_ID, // <paramref name="id" />
+        ///    "type": SERIALIZED_TYPE, // <paramref name="data.Type" />
+        ///    "data": SERIALIZED_DATA, // <paramref name="data" />
+        ///    "uuid": UNIQUE_REQUEST_IDENTIFIER // Exists only when <paramref name="onResponse" /> callback is provided
+        ///  }
+        ///  
+        /// Message is automatically prefixed with <see cref="UnityMessageManager.MessagePrefix" /> 
+        /// constant to distinguish it from unformatted messages.
+        /// </remarks>
+        public static Task<T> SendAsync<T>(string id, IUnityRequest data, CancellationToken cancellationToken = default(CancellationToken))
+            => UnityMessageManager.instance?.SendRequestAsync<T>(id, data.Type(), data, cancellationToken);
+
+        /// <summary>
+        /// Sends request message with optional data.
+        /// </summary>
+        /// <param name="id">The message id (identifying target).</param>
+        /// <param name="type">The request type (to identify response).</param>
+        /// <param name="data">(optional) The data attached to the message.</param>
+        /// <returns>Response message from the target.</returns>
+        /// <remarks>
+        /// Message format:
+        ///  {
+        ///    "id": MESSAGE_TARGET_ID, // <paramref name="id" />
+        ///    "type": SERIALIZED_TYPE, // <paramref name="type" />
+        ///    "data": SERIALIZED_DATA, // <paramref name="data" />
+        ///    "uuid": UNIQUE_REQUEST_IDENTIFIER // Exists only when <paramref name="onResponse" /> callback is provided
+        ///  }
+        ///  
+        /// Message is automatically prefixed with <see cref="UnityMessageManager.MessagePrefix" /> 
+        /// constant to distinguish it from unformatted messages.
+        /// </remarks>
+        public static Task<T> SendAsync<T>(string id, int type, object data = null, CancellationToken cancellationToken = default(CancellationToken))
+            => UnityMessageManager.instance?.SendRequestAsync<T>(id, type, data, cancellationToken);
 
         /// <summary>
         /// Subscribes a new message handler to listen for a given message id.
@@ -153,7 +193,123 @@ namespace ReactNative
         /// <param name="handler">The message handler.</param>
         /// <returns>Disposable instance that unsubscribes handler when disposed.</returns>
         public static IDisposable Subscribe(string id, UnityMessageDelegate handler)
-            => instance?.SubscribeInternal(id, handler);
+            => UnityMessageManager.instance?.SubscribeInternal(id, handler);
+
+#if !UNITY_EXPORT
+        public static void Inject(string data)
+            => UnityMessageManager.instance?.InjectInternal(data);
+        private void InjectInternal(string data)
+            => this.onMessage(data);
+
+        public static void Inject(string id, object data = null)
+            => UnityMessageManager.instance?.InjectInternal(id, data);
+        private void InjectInternal(string id, object data)
+        {
+            string json = UnityMessageManager.SerializeMessage(id, data);
+            this.onRNMessage(MessagePrefix + json);
+        }
+
+        public static Task<T> InjectAsync<T>(string id, IUnityRequest data, CancellationToken cancellationToken = default(CancellationToken))
+            => UnityMessageManager.instance?.InjectInternalAsync<T>(id, GetNextUUID(), data.Type(), data, cancellationToken);
+        public static Task<T> InjectAsync<T>(string id, int type, object data = null, CancellationToken cancellationToken = default(CancellationToken))
+            => UnityMessageManager.instance?.InjectInternalAsync<T>(id, GetNextUUID(), type, data, cancellationToken);
+        private async Task<T> InjectInternalAsync<T>(string id, int uuid, int type, object data, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var awaiter = new TaskCompletionSource<UnityMessage>();
+            string json = UnityMessageManager.SerializeRequest(id, uuid, type, data);
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            try
+            {
+                this.AddOutboundRequest(uuid, awaiter);
+                SendRequestInternal(id, uuid, type, data); // Note: This will only print message to Unity Console
+
+                UnityMessage unityMessage;
+                using (cancellationToken.Register(() =>
+                                                  {
+                                                      if (awaiter.TrySetCanceled())
+                                                      {
+                                                          SendCancel(id, uuid);
+                                                      }
+                                                  }))
+                {
+                    this.onRNMessage(MessagePrefix + json);
+                    unityMessage = await awaiter.Task.ConfigureAwait(false);
+                }
+
+                if (typeof(T) == typeof(UnityMessage))
+                {
+                    return (T)Convert.ChangeType(unityMessage, typeof(UnityMessage));
+                }
+                else
+                {
+                    return unityMessage.GetData<T>();
+                }
+            }
+            finally
+            {
+                this.RemoveOutboundRequest(uuid);
+            }
+        }
+#endif
+        #endregion
+
+        #region Unity lifecycle
+
+        private void OnDestroy()
+        {
+            UnityMessageManager.instanceDestroyed = true;
+            UnityMessageManager.instance = null;
+        }
+
+        #endregion
+
+        #region Private methods
+
+        private async Task<T> SendRequestAsync<T>(string id, int type, object data, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            int uuid = GetNextUUID();
+            var awaiter = new TaskCompletionSource<UnityMessage>();
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            try
+            {
+                this.AddOutboundRequest(uuid, awaiter);
+                SendRequestInternal(id, uuid, type, data);
+
+                UnityMessage unityMessage;
+                using (cancellationToken.Register(() =>
+                                                  {
+                                                      if (awaiter.TrySetCanceled())
+                                                      {
+                                                          SendCancel(id, uuid);
+                                                      }
+                                                  }))
+                {
+                    unityMessage = await awaiter.Task.ConfigureAwait(false);
+                }
+
+                if (typeof(T) == typeof(UnityMessage))
+                {
+                    return (T)Convert.ChangeType(unityMessage, typeof(UnityMessage));
+                }
+                else
+                {
+                    return unityMessage.GetData<T>();
+                }
+            }
+            finally
+            {
+                this.RemoveOutboundRequest(uuid);
+            }
+        }
+
         private IDisposable SubscribeInternal(string id, UnityMessageDelegate handler)
         {
             lock (this.stateLock)
@@ -187,119 +343,6 @@ namespace ReactNative
 
                 return subscriptionInfo;
             }
-        }
-
-#if !UNITY_EXPORT
-        public static void Inject(string data)
-            => instance?.InjectInternal(data);
-        private void InjectInternal(string data)
-            => this.onMessage(data);
-
-        public static void Inject(string id, object data = null)
-            => instance?.InjectInternal(id, data);
-        private void InjectInternal(string id, object data)
-        {
-            string json = "{" +
-                $"\"{nameof(UnityMessage.id)}\":{JSON.ToJSON(id)}" +
-                (data != null
-                    ? $",\"{nameof(data)}\":{JSON.ToJSON(data)}"
-                    : string.Empty) +
-                "}";
-
-            this.onRNMessage(MessagePrefix + json);
-        }
-
-        public static Task<T> InjectAsync<T>(string id, object data = null, CancellationToken cancellationToken = default(CancellationToken))
-            => instance?.InjectInternalAsync<T>(id, (int)(UnityEngine.Random.value * 1000000), data, cancellationToken);
-        public static Task<T> InjectAsync<T>(string id, int uuid, object data = null, CancellationToken cancellationToken = default(CancellationToken))
-            => instance?.InjectInternalAsync<T>(id, uuid, data, cancellationToken);
-        private async Task<T> InjectInternalAsync<T>(string id, int uuid, object data, CancellationToken cancellationToken)
-        {
-            TaskCompletionSource<T> result = new TaskCompletionSource<T>();
-            using (cancellationToken.Register(() => result.TrySetCanceled()))
-            {
-                string json = "{" +
-                $"\"{nameof(UnityMessage.id)}\":{JSON.ToJSON(id)}" +
-                $",\"{nameof(UnityMessage.uuid)}\":{uuid},\"type\":{(int)UnityMessageType.Request}" +
-                (data != null
-                    ? $",\"{nameof(data)}\":{JSON.ToJSON(data)}"
-                    : string.Empty) +
-                "}";
-
-                this.awaitingRequests.Add(uuid, (response) => result.TrySetResult(response.GetData<T>()));
-
-                this.onRNMessage(MessagePrefix + json);
-
-                this.SendRequest(id, uuid, data);
-
-                return await result.Task;
-            }
-        }
-#endif
-        #endregion
-
-        #region Unity methods
-
-        private void OnDestroy()
-        {
-            instanceDestroyed = true;
-            instance = null;
-        }
-
-        #endregion
-
-        #region Private methods
-
-        private async Task<T> SendInternalAsync<T>(string id, object data, CancellationToken cancellationToken, Func<UnityMessage, T> responseHandler)
-        {
-            TaskCompletionSource<T> result = new TaskCompletionSource<T>();
-            using (cancellationToken.Register(() => result.TrySetCanceled()))
-            {
-                int uuid = GetNextID();
-                this.awaitingRequests.Add(uuid, (response) => result.TrySetResult(responseHandler(response)));
-
-                this.SendRequest(id, uuid, data);
-
-                return await result.Task;
-            }
-        }
-
-        /// <summary>
-        /// Creates and sends request message type.
-        /// </summary>
-        /// <param name="id">The unity message ID.</param>
-        /// <param name="uuid">The unique request ID.</param>
-        /// <param name="data">THe optional request data.</param>
-        private void SendRequest(string id, int uuid, object data)
-        {
-            string json = "{" +
-                $"\"{nameof(UnityMessage.id)}\":{JSON.ToJSON(id)}" +
-                $",\"{nameof(UnityMessage.uuid)}\":{uuid},\"type\":{(int)UnityMessageType.Request}" +
-                (data != null
-                    ? $",\"{nameof(data)}\":{JSON.ToJSON(data)}"
-                    : string.Empty) +
-                "}";
-
-            UnityMessageManager.onUnityMessage(MessagePrefix + json);
-        }
-
-        /// <summary>
-        /// Creates and sends response message type.
-        /// </summary>
-        /// <param name="id">The unity message ID.</param>
-        /// <param name="uuid">The unique request ID.</param>
-        /// <param name="data">THe optional response data.</param>
-        private void SendResponse(string id, int uuid, object data)
-        {
-            string json = "{" +
-                $"\"{nameof(UnityMessage.id)}\":{JSON.ToJSON(id)}" +
-                $",\"{nameof(UnityMessage.uuid)}\":{uuid},\"type\":{(int)UnityMessageType.Response}" +
-                (data != null
-                    ? $",\"{nameof(data)}\":{JSON.ToJSON(data)}"
-                    : string.Empty) +
-                "}";
-
-            UnityMessageManager.onUnityMessage(MessagePrefix + json);
         }
 
         /// <summary>
@@ -356,48 +399,161 @@ namespace ReactNative
 
                 Subscription[] subscriptionList;
                 UnityMessage unityMessage = JSON.ToObject<UnityMessage>(message);
-                if (unityMessage.type == UnityMessageType.Response)
+                if (unityMessage.IsRequestCompletion)
                 {
-                    // handle callback message
-                    UnityResponseDelegate m;
-                    var uuid = unityMessage.uuid.Value;
-                    if (this.awaitingRequests.TryGetValue(uuid, out m))
-                    {
-                        this.awaitingRequests.Remove(uuid);
-                        m?.Invoke(unityMessage);
-                    }
-                    else
-                    {
-                        Debug.LogWarning("Unknown message uuid.");
-                    }
-                }
-                else if (this.subscriptions.TryGetValue(unityMessage.id, out subscriptionList))
-                {
-                    var args = new UnityMessageHandlerImpl(unityMessage);
-
-                    // handle as regular message
-                    foreach (Subscription s in subscriptionList)
-                    {
-                        try
-                        {
-                            s.handler.Invoke(args);
-                        }
-                        catch (Exception e)
-                        {
-                            Debug.LogWarning("Failed to handle incoming message");
-                            Debug.LogError(e, this);
-                        }
-                    }
+                    // Handle as request response/error/cancellation
+                    this.TryResolveRequest(unityMessage);
                 }
                 else
                 {
-                    Debug.LogWarning($"Unknown message id: {unityMessage.id}.");
+                    lock (this.stateLock)
+                    {
+                        if (this.subscriptions.TryGetValue(unityMessage.id, out subscriptionList) && subscriptionList.Length > 0)
+                        {
+                            // Handle as incomming message or request
+                            var args = new UnityMessageHandlerImpl(unityMessage);
+
+                            if (unityMessage.IsRequest)
+                            {
+                                // Remember request for incomming cancelation handling
+                                this.AddIncommingRequest(unityMessage.uuid.Value, args);
+                            }
+
+                            try
+                            {
+                                foreach (Subscription s in subscriptionList)
+                                {
+                                    s.handler.Invoke(args);
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                Debug.LogError($"Failed to handle incoming message:\n{e}", this);
+
+                                if (args.IsRequest && !args.IsDeferred && !args.ResponseSent)
+                                {
+                                    args.SendError(e);
+                                }
+                            }
+
+                            if (!args.IsDeferred)
+                            {
+                                args.Dispose();
+                            }
+                        }
+                        else
+                        {
+                            Debug.LogError($"Unknown message id: {unityMessage.id}.", this);
+                        }
+                    }
                 }
             }
             catch (Exception e)
             {
-                Debug.LogWarning("Failed to parse incoming message");
-                Debug.LogError(e, this);
+                Debug.LogError($"Failed to parse incoming message:\n{e}", this);
+            }
+        }
+
+        private void AddIncommingRequest(int uuid, UnityMessageHandlerImpl handler)
+        {
+            lock (this.stateLock)
+            {
+                this.receivedRequests[uuid] = handler;
+            }
+        }
+
+        private void RemoveIncommingRequest(int uuid)
+        {
+            lock (this.stateLock)
+            {
+                this.receivedRequests.Remove(uuid);
+            }
+        }
+
+        private bool RemoveIncommingRequest(int uuid, out UnityMessageHandlerImpl handler)
+        {
+            lock (this.stateLock)
+            {
+                if (this.receivedRequests.TryGetValue(uuid, out handler))
+                {
+                    return this.receivedRequests.Remove(uuid);
+                }
+
+                return false;
+            }
+        }
+
+        private void AddOutboundRequest(int uuid, TaskCompletionSource<UnityMessage> awaiter)
+        {
+            lock (this.stateLock)
+            {
+                this.sentRequests.Add(uuid, awaiter);
+            }
+        }
+
+        private void RemoveOutboundRequest(int uuid)
+        {
+            lock (this.stateLock)
+            {
+                this.sentRequests.Remove(uuid);
+            }
+        }
+
+        private bool RemoveOutboundRequest(int uuid, out TaskCompletionSource<UnityMessage> awaiter)
+        {
+            lock (this.stateLock)
+            {
+                if (this.sentRequests.TryGetValue(uuid, out awaiter))
+                {
+                    return this.sentRequests.Remove(uuid);
+                }
+
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Tries to find and resolve awaiting request handler.
+        /// </summary>
+        /// <param name="id">The unity response message.</param>
+        private void TryResolveRequest(UnityMessage unityMessage)
+        {
+            var uuid = unityMessage.uuid.Value;
+
+            lock (this.stateLock)
+            {
+                if (unityMessage.IsCancel)
+                {
+                    // Cancellation of received request
+                    if (this.RemoveIncommingRequest(uuid, out UnityMessageHandlerImpl handler))
+                    {
+                        handler.NotifyCancelled();
+                    }
+                    else
+                    {
+                        Debug.LogError($"Unknown incomming request uuid: {uuid}", this);
+                    }
+                }
+                // Response (success or failure) to sent request
+                else if (this.RemoveOutboundRequest(uuid, out TaskCompletionSource<UnityMessage> awaiter))
+                {
+                    if (unityMessage.IsResponse)
+                    {
+                        awaiter.TrySetResult(unityMessage);
+                    }
+                    else if (unityMessage.IsCancel)
+                    {
+                        awaiter.TrySetCanceled();
+                    }
+                    else if (unityMessage.IsError)
+                    {
+                        awaiter.TrySetException(new UnityRequestException(unityMessage));
+                    }
+                    else
+                    {
+                        Debug.LogError($"Unknown response message type: {unityMessage.type}", instance);
+                    }
+                }
             }
         }
 
@@ -447,118 +603,139 @@ namespace ReactNative
             message = message.Substring(MessagePrefix.Length);
 
             UnityMessage unityMessage = JSON.ToObject<UnityMessage>(message);
-            if (unityMessage.type == UnityMessageType.Response)
+            if (unityMessage.IsRequestCompletion)
             {
-                // handle callback message
-                UnityResponseDelegate m;
-                var uuid = unityMessage.uuid.Value;
-                if (instance.awaitingRequests.TryGetValue(uuid, out m))
-                {
-                    instance.awaitingRequests.Remove(uuid);
-                    m?.Invoke(unityMessage);
-                }
-                else
-                {
-                    Debug.LogWarning("Unknown message uuid.");
-                }
+                Debug.Log($"onResponse[{unityMessage.uuid}]: {message}");
+                instance?.TryResolveRequest(unityMessage);
             }
             else
             {
-                Debug.Log("onUnityMessage: " + message);
+                Debug.Log($"onUnityMessage[{unityMessage.uuid}]: {message}");
             }
         }
 #endif
 
-        #endregion
-
-        #region Types
-
-        private delegate void UnityResponseDelegate(UnityMessage response);
-
-        private sealed class Subscription : IDisposable
+        /// <summary>
+        /// Creates simple message in JSON format.
+        /// </summary>
+        /// <param name="id">The unity message ID.</param>
+        /// <param name="data">The optional data.</param>
+        private static string SerializeMessage(string id, object data)
         {
-            public readonly string id;
-            public readonly UnityMessageDelegate handler;
-            public Action<Subscription> unsubscription;
+            string json = "{" +
+                $"\"{nameof(UnityMessage.id)}\":{JSON.ToJSON(id)}" +
+                (data != null
+                    ? $",\"{nameof(UnityMessage.data)}\":{JSON.ToJSON(data)}"
+                    : string.Empty) +
+                "}";
 
-            public Subscription(string id, UnityMessageDelegate handler, Action<Subscription> unsubscription)
-            {
-                this.id = id;
-                this.handler = handler;
-                this.unsubscription = unsubscription;
-            }
-
-            public void Dispose()
-            {
-                lock (this)
-                {
-                    var handler = this.unsubscription;
-                    this.unsubscription = null;
-                    handler?.Invoke(this);
-                }
-            }
+            return json;
         }
 
-        private sealed class UnityMessageHandlerImpl : UnityMessageHandler
+        /// <summary>
+        /// Creates request message in JSON format.
+        /// </summary>
+        /// <param name="id">The unity message ID.</param>
+        /// <param name="uuid">The unique request ID.</param>
+        /// <param name="type">The request type ID.</param>
+        /// <param name="data">The optional request data.</param>
+        private static string SerializeRequest(string id, int uuid, int type, object data)
         {
-            public UnityMessageHandlerImpl(UnityMessage message)
-                : base(message) { }
+            string json = "{" +
+                $"\"{nameof(UnityMessage.id)}\":{JSON.ToJSON(id)}" +
+                $",\"{nameof(UnityMessage.type)}\":{type}" +
+                $",\"{nameof(UnityMessage.uuid)}\":{uuid}" +
+                (data != null
+                    ? $",\"{nameof(UnityMessage.data)}\":{JSON.ToJSON(data)}"
+                    : string.Empty) +
+                "}";
 
-            public override void SetResponse(object data)
-            {
-                if (this.IsRequest && this.message.uuid.HasValue)
-                {
-                    UnityMessageManager.instance?.SendResponse(
-                        this.message.id,
-                        this.message.uuid.Value,
-                        data);
-                }
-                else
-                {
-                    Debug.LogError("This message is not a request type.");
-                }
-            }
+            return json;
         }
 
-#if UNITY_WSA && !UNITY_EDITOR && ENABLE_WINMD_SUPPORT
-        private sealed class IL2CPPBridge : RNUnityViewBridge.IIL2CPPBridge
+        /// <summary>
+        /// Creates and sends plain message type.
+        /// </summary>
+        /// <param name="id">The unity message ID.</param>
+        /// <param name="uuid">The unique request ID.</param>
+        /// <param name="type">The type of the request.</param>
+        /// <param name="data">The optional request data.</param>
+        private static void SendPlainInternal(string id, object data)
         {
-            public void onMessage(string gameObject, string method, string message)
-            {
-                GameObject o = null;
-                if (gameObject == UnityMessageManager.GameObjectName)
-                {
-                    if (method == nameof(UnityMessageManager.onMessage))
-                    {
-                        UnityMessageManager.instance?.onMessage(message);
-                    }
-                    else if (method == nameof(UnityMessageManager.onRNMessage))
-                    {
-                        UnityMessageManager.instance?.onRNMessage(message);
-                    }
-                    else
-                    {
-                        o = UnityMessageManager.instance?.gameObject;
-                    }
-                }
-                else
-                {
-                    o = GameObject.Find(gameObject);
-                }
+            string json = SerializeMessage(id, data);
 
-                if (o != null)
-                {
-                    o.SendMessage(method, message, SendMessageOptions.DontRequireReceiver);
-                }
-            }
-
-            public void Shutdown()
-            {
-                RNUnityViewBridge.BridgeBootstrapper.SetIL2CPPBridge(null);
-                UnityEngine.Application.Unload();
-            }
+            UnityMessageManager.onUnityMessage(MessagePrefix + json);
         }
-#endif
+
+        /// <summary>
+        /// Creates and sends request message type.
+        /// </summary>
+        /// <param name="id">The unity message ID.</param>
+        /// <param name="uuid">The unique request ID.</param>
+        /// <param name="type">The type of the request.</param>
+        /// <param name="data">The optional request data.</param>
+        private static void SendRequestInternal(string id, int uuid, int type, object data)
+        {
+            string json = SerializeRequest(id, uuid, type, data);
+
+            UnityMessageManager.onUnityMessage(MessagePrefix + json);
+        }
+
+        /// <summary>
+        /// Creates response message in JSON format.
+        /// </summary>
+        /// <param name="id">The unity message ID.</param>
+        /// <param name="uuid">The unique request ID.</param>
+        /// <param name="data">THe optional response data.</param>
+        private static void SendResponse(string id, int uuid, object data)
+        {
+            string json = "{" +
+                $"\"{nameof(UnityMessage.id)}\":{JSON.ToJSON(id)}" +
+                $",\"{nameof(UnityMessage.type)}\":{(int)UnityMessageType.Response}" +
+                $",\"{nameof(UnityMessage.uuid)}\":{uuid}" +
+                (data != null
+                    ? $",\"{nameof(UnityMessage.data)}\":{JSON.ToJSON(data)}"
+                    : string.Empty) +
+                "}";
+
+            UnityMessageManager.onUnityMessage(MessagePrefix + json);
+        }
+
+        /// <summary>
+        /// Creates cancellation message in JSON format.
+        /// </summary>
+        /// <param name="id">The unity message ID.</param>
+        /// <param name="uuid">The unique request ID.</param>
+        private static void SendCancel(string id, int uuid)
+        {
+            string json = "{" +
+                $"\"{nameof(UnityMessage.id)}\":{JSON.ToJSON(id)}" +
+                $",\"{nameof(UnityMessage.type)}\":{(int)UnityMessageType.Cancel}" +
+                $",\"{nameof(UnityMessage.uuid)}\":{uuid}" +
+                "}";
+
+            UnityMessageManager.onUnityMessage(MessagePrefix + json);
+        }
+
+        /// <summary>
+        /// Creates error message in JSON format.
+        /// </summary>
+        /// <param name="id">The unity message ID.</param>
+        /// <param name="uuid">The unique request ID.</param>
+        /// <param name="error">The optional response data.</param>
+        private static void SendError(string id, int uuid, Exception error, string memberName, string sourceFilePath, int sourceLineNumber)
+        {
+            string json = "{" +
+                $"\"{nameof(UnityMessage.id)}\":{JSON.ToJSON(id)}" +
+                $",\"{nameof(UnityMessage.type)}\":{(int)UnityMessageType.Error}" +
+                $",\"{nameof(UnityMessage.uuid)}\":{uuid}" +
+                (error != null
+                    ? $",\"{nameof(UnityMessage.data)}\":{JSON.ToJSON(error)}"
+                    : string.Empty) +
+                "}";
+
+            UnityMessageManager.onUnityMessage(MessagePrefix + json);
+        }
 
         #endregion
     }

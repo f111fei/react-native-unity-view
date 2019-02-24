@@ -18,10 +18,10 @@ export enum UnityMessageType {
 }
 
 export interface UnityMessage {
-    id: string;
-    type: UnityMessageType;
-    uuid?: number;
-    data?: any;
+    readonly id: string;
+    readonly type: UnityMessageType;
+    readonly uuid?: number;
+    readonly data?: any;
     isSimple(): boolean;
     isRequest(): boolean;
     isRequestCompletion(): boolean;
@@ -74,10 +74,24 @@ export interface UnityMessageHandler {
 }
 
 class UnityMessageImpl implements UnityMessage {
-    id: string;
-    type: UnityMessageType;
-    uuid?: number;
-    data?: any;
+    private m_json: UnityMessage;
+
+    constructor(json: UnityMessage) {
+        this.m_json = json;
+    }
+
+    public get id(): string {
+        return this.m_json.id;
+    }
+    public get type(): UnityMessageType {
+        return this.m_json.type;
+    }
+    public get uuid(): number | undefined {
+        return this.m_json.uuid;
+    }
+    public get data(): any | undefined {
+        return this.m_json.data;
+    }
 
     public isSimple(): boolean {
         return this.uuid === undefined && this.type === UnityMessageType.Default;
@@ -346,9 +360,8 @@ export default class UnityView extends React.Component<UnityViewProps> {
         let message = event.nativeEvent.message
         if (message.startsWith(messagePrefix)) {
             message = message.replace(messagePrefix, '');
-
-            var unityMessage = JSON.parse(message) as UnityMessage;
-            unityMessage = Object.setPrototypeOf(unityMessage, UnityMessageImpl.prototype);
+            var json = JSON.parse(message) as UnityMessage;
+            var unityMessage = new UnityMessageImpl(json);
             if (unityMessage.isRequestCompletion()) {
                 if (unityMessage.isCancel()) {
                     const awaitEntry = requestCallbackMessageMap[unityMessage.uuid];

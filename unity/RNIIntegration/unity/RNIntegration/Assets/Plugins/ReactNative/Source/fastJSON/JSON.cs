@@ -7,6 +7,7 @@ using System.Data;
 using System.Globalization;
 using System.IO;
 using System.Collections.Specialized;
+using System.Reflection;
 
 #if UNITY_WSA
 using TypeR = System.Reflection.TypeInfo;

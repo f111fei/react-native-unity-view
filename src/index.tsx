@@ -2,12 +2,8 @@ import * as PropTypes from "prop-types";
 import * as React from "react";
 import { requireNativeComponent, ViewProperties, findNodeHandle, NativeModules, NativeSyntheticEvent, ViewPropTypes } from 'react-native';
 import { Observable, Subscriber, TeardownLogic } from 'rxjs';
-const { UIManager } = NativeModules;
 
-declare var global: any;
-var isDebug = function () {
-    return global !== undefined && global.DEBUG !== undefined;
-}
+const { UIManager } = NativeModules;
 
 export interface UnityViewMessageEventData {
     message: string;
@@ -427,7 +423,7 @@ export default class UnityView extends React.Component<UnityViewProps> {
     };
 
     private postMessageInternal(gameObject: string, methodName: string, message: string) {
-        if (isDebug()) {
+        if (__DEV__) {
             if (message.startsWith(messagePrefix)) {
                 console.log('Sending: ' + message.substr(messagePrefix.length));
             } else {
@@ -451,7 +447,7 @@ export default class UnityView extends React.Component<UnityViewProps> {
         if (message.startsWith(messagePrefix)) {
             message = message.replace(messagePrefix, '');
 
-            if (isDebug()) {
+            if (__DEV__) {
                 console.log('Received: ' + message);
             }
 
@@ -495,7 +491,7 @@ export default class UnityView extends React.Component<UnityViewProps> {
                 this.props.onUnityMessage(handler);
             }
         } else {
-            if (isDebug()) {
+            if (__DEV__) {
                 console.log('Received: ' + message);
             }
 

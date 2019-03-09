@@ -29,7 +29,7 @@ namespace fastJSON
         /// <summary>
         /// Use the fast GUID format (default = True)
         /// </summary>
-        public bool UseFastGuid = true;
+        public bool UseFastGuid = false;
         /// <summary>
         /// Serialize null values to the output (default = True)
         /// </summary>
@@ -70,7 +70,7 @@ namespace fastJSON
         /// <summary>
         /// Output Enum values instead of names (default = False)
         /// </summary>
-        public bool UseValuesOfEnums = false;
+        public bool UseValuesOfEnums = true;
         /// <summary>
         /// Ignore attributes to check for (default : XmlIgnoreAttribute, NonSerialized)
         /// </summary>

@@ -1,6 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-
-namespace ReactNative
+﻿namespace ReactNative
 {
     /// <summary>
     /// Describes unity request entity.
@@ -9,4 +7,10 @@ namespace ReactNative
     {
         int Type();
     }
+
+    /// <summary>
+    /// Describes unity request entity.
+    /// </summary>
+    public interface IUnityRequest<T> : IUnityRequest
+    { }
 }

@@ -101,9 +101,49 @@ namespace ReactNative
             => UnityMessageManager.SendPlainInternal(id, data);
 
         /// <summary>
+        /// Sends message with data.
+        /// </summary>
+        /// <param name="id">The message id (identifying target).</param>
+        /// <param name="data">The message data.</param>
+        /// <remarks>
+        /// Message format:
+        ///  {
+        ///    "id": MESSAGE_TARGET_ID, // <paramref name="id" />
+        ///    "type": SERIALIZED_TYPE, // <paramref name="data.Type" />
+        ///    "data": SERIALIZED_DATA, // <paramref name="data" />
+        ///  }
+        ///  
+        /// Raw message is automatically prefixed with <see cref="UnityMessageManager.MessagePrefix" /> 
+        /// constant to distinguish it from unformatted messages.
+        /// </remarks>
+        public static void Send(string id, IUnityResponse data)
+            => UnityMessageManager.SendPlainInternal(id, data.Type(), data);
+
+        /// <summary>
+        /// Sends message with optional data.
+        /// </summary>
+        /// <param name="id">The message id (identifying target).</param>
+        /// <param name="type">The message type.</param>
+        /// <param name="data">(optional) The data attached to the message.</param>
+        /// <remarks>
+        /// Message format:
+        ///  {
+        ///    "id": MESSAGE_TARGET_ID, // <paramref name="id" />
+        ///    "type": SERIALIZED_TYPE, // <paramref name="type" />
+        ///    "data": SERIALIZED_DATA, // <paramref name="data" />
+        ///  }
+        ///  
+        /// Raw message is automatically prefixed with <see cref="UnityMessageManager.MessagePrefix" /> 
+        /// constant to distinguish it from unformatted messages.
+        /// </remarks>
+        public static void Send(string id, int type, object data = null)
+            => UnityMessageManager.SendPlainInternal(id, type, data);
+
+        /// <summary>
         /// Sends request message with optional data.
         /// </summary>
         /// <param name="id">The message id (identifying target).</param>
+        /// <param name="type">The request type (to identify response).</param>
         /// <param name="data">The data attached to the message.</param>
         /// <returns>Response message from the target.</returns>
         /// <remarks>
@@ -210,6 +250,8 @@ namespace ReactNative
         }
 
         public static Task<T> InjectAsync<T>(string id, IUnityRequest data, CancellationToken cancellationToken = default(CancellationToken))
+            => UnityMessageManager.instance?.InjectInternalAsync<T>(id, GetNextUUID(), data.Type(), data, cancellationToken);
+        public static Task<T> InjectAsync<T>(string id, IUnityRequest<T> data, CancellationToken cancellationToken = default(CancellationToken))
             => UnityMessageManager.instance?.InjectInternalAsync<T>(id, GetNextUUID(), data.Type(), data, cancellationToken);
         public static Task<T> InjectAsync<T>(string id, int type, object data = null, CancellationToken cancellationToken = default(CancellationToken))
             => UnityMessageManager.instance?.InjectInternalAsync<T>(id, GetNextUUID(), type, data, cancellationToken);
@@ -643,6 +685,25 @@ namespace ReactNative
         }
 
         /// <summary>
+        /// Creates simple message in JSON format.
+        /// </summary>
+        /// <param name="id">The unity message ID.</param>
+        /// <param name="type">The message type ID.</param>
+        /// <param name="data">The optional data.</param>
+        private static string SerializeMessage(string id, int type, object data)
+        {
+            string json = "{" +
+                $"\"{nameof(UnityMessage.id)}\":{JSON.ToJSON(id)}" +
+                $",\"{nameof(UnityMessage.type)}\":{type}" +
+                (data != null
+                    ? $",\"{nameof(UnityMessage.data)}\":{JSON.ToJSON(data)}"
+                    : string.Empty) +
+                "}";
+
+            return json;
+        }
+
+        /// <summary>
         /// Creates request message in JSON format.
         /// </summary>
         /// <param name="id">The unity message ID.</param>
@@ -667,12 +728,23 @@ namespace ReactNative
         /// Creates and sends plain message type.
         /// </summary>
         /// <param name="id">The unity message ID.</param>
-        /// <param name="uuid">The unique request ID.</param>
-        /// <param name="type">The type of the request.</param>
         /// <param name="data">The optional request data.</param>
         private static void SendPlainInternal(string id, object data)
         {
             string json = SerializeMessage(id, data);
+
+            UnityMessageManager.onUnityMessage(MessagePrefix + json);
+        }
+
+        /// <summary>
+        /// Creates and sends plain message type.
+        /// </summary>
+        /// <param name="id">The unity message ID.</param>
+        /// <param name="type">The type of the request.</param>
+        /// <param name="data">The optional request data.</param>
+        private static void SendPlainInternal(string id, int type, object data)
+        {
+            string json = SerializeMessage(id, type, data);
 
             UnityMessageManager.onUnityMessage(MessagePrefix + json);
         }

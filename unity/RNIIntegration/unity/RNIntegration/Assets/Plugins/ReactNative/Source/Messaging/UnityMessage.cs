@@ -72,7 +72,7 @@ namespace ReactNative
         /// <typeparam name="T">The type to use for conversion.</typeparam>
         /// <returns>The data in a given type.</returns>
         public T GetData<T>()
-            => JSON.ToObject<T>(this.data);
+            => this.data != null ? JSON.ToObject<T>(this.data) : default(T);
 
         /// <summary>
         /// Converts message data to minimized JSON.

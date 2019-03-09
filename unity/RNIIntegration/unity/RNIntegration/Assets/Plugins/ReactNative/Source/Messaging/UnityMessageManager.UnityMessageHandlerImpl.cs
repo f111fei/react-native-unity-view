@@ -60,6 +60,9 @@ namespace ReactNative
                 if (this.IsRequest)
                 {
                     this.ResponseSent = true;
+                    UnityMessageManager.SendCancel(
+                        this.Message.id,
+                        this.Message.uuid.Value);
                 }
                 else
                 {

@@ -270,13 +270,7 @@ namespace ReactNative
                 SendRequestInternal(id, uuid, type, data); // Note: This will only print message to Unity Console
 
                 UnityMessage unityMessage;
-                using (cancellationToken.Register(() =>
-                                                  {
-                                                      if (awaiter.TrySetCanceled())
-                                                      {
-                                                          SendCancel(id, uuid);
-                                                      }
-                                                  }))
+                using (cancellationToken.Register(() => SendCancel(id, uuid)))
                 {
                     this.onRNMessage(MessagePrefix + json);
                     unityMessage = await awaiter.Task.ConfigureAwait(false);
@@ -446,6 +440,11 @@ namespace ReactNative
                     // Handle as request response/error/cancellation
                     this.TryResolveRequest(unityMessage);
                 }
+                else if (unityMessage.IsCancel)
+                {
+                    // Handle as request cancellation
+                    this.TryCancelRequest(unityMessage);
+                }
                 else
                 {
                     lock (this.stateLock)
@@ -574,26 +573,14 @@ namespace ReactNative
 
             lock (this.stateLock)
             {
-                if (unityMessage.IsCancel)
-                {
-                    // Cancellation of received request
-                    if (this.RemoveIncommingRequest(uuid, out UnityMessageHandlerImpl handler))
-                    {
-                        handler.NotifyCancelled();
-                    }
-                    else
-                    {
-                        Debug.LogError($"Unknown incomming request uuid: {uuid}", this);
-                    }
-                }
                 // Response (success or failure) to sent request
-                else if (this.RemoveOutboundRequest(uuid, out TaskCompletionSource<UnityMessage> awaiter))
+                if (this.RemoveOutboundRequest(uuid, out TaskCompletionSource<UnityMessage> awaiter))
                 {
                     if (unityMessage.IsResponse)
                     {
                         awaiter.TrySetResult(unityMessage);
                     }
-                    else if (unityMessage.IsCancel)
+                    else if (unityMessage.IsCanceled)
                     {
                         awaiter.TrySetCanceled();
                     }
@@ -605,6 +592,32 @@ namespace ReactNative
                     {
                         Debug.LogError($"Unknown response message type: {unityMessage.type}", instance);
                     }
+                }
+                else
+                {
+                    Debug.LogError($"Unknown outbound request uuid: {unityMessage.uuid}", instance);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Tries to find and resolve awaiting request handler.
+        /// </summary>
+        /// <param name="id">The unity response message.</param>
+        private void TryCancelRequest(UnityMessage unityMessage)
+        {
+            var uuid = unityMessage.uuid.Value;
+
+            lock (this.stateLock)
+            {
+                // Cancellation of received request
+                if (this.RemoveIncommingRequest(uuid, out UnityMessageHandlerImpl handler))
+                {
+                    handler.NotifyCancelled();
+                }
+                else
+                {
+                    Debug.LogError($"Unknown incomming request uuid: {uuid}", this);
                 }
             }
         }
@@ -659,6 +672,11 @@ namespace ReactNative
             {
                 Debug.Log($"onResponse[{unityMessage.uuid}]: {message}");
                 instance?.TryResolveRequest(unityMessage);
+            }
+            else if (unityMessage.IsCancel)
+            {
+                Debug.Log($"onCancel[{unityMessage.uuid}]: {message}");
+                instance?.TryCancelRequest(unityMessage);
             }
             else
             {
@@ -784,7 +802,7 @@ namespace ReactNative
         }
 
         /// <summary>
-        /// Creates cancellation message in JSON format.
+        /// Creates cancellation request message in JSON format.
         /// </summary>
         /// <param name="id">The unity message ID.</param>
         /// <param name="uuid">The unique request ID.</param>
@@ -793,6 +811,22 @@ namespace ReactNative
             string json = "{" +
                 $"\"{nameof(UnityMessage.id)}\":{JSON.ToJSON(id)}" +
                 $",\"{nameof(UnityMessage.type)}\":{(int)UnityMessageType.Cancel}" +
+                $",\"{nameof(UnityMessage.uuid)}\":{uuid}" +
+                "}";
+
+            UnityMessageManager.onUnityMessage(MessagePrefix + json);
+        }
+
+        /// <summary>
+        /// Creates cancellation notification message in JSON format.
+        /// </summary>
+        /// <param name="id">The unity message ID.</param>
+        /// <param name="uuid">The unique request ID.</param>
+        private static void SendCanceled(string id, int uuid)
+        {
+            string json = "{" +
+                $"\"{nameof(UnityMessage.id)}\":{JSON.ToJSON(id)}" +
+                $",\"{nameof(UnityMessage.type)}\":{(int)UnityMessageType.Canceled}" +
                 $",\"{nameof(UnityMessage.uuid)}\":{uuid}" +
                 "}";
 

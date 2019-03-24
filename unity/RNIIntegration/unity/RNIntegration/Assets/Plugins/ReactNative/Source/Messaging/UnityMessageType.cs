@@ -16,14 +16,19 @@
         Response = 1,
 
         /// <summary>
-        /// Message is a request cancellation notification.
-        /// </summary>
-        Cancel = 2,
-
-        /// <summary>
         /// Message describes an error that occurred on the other end.
         /// </summary>
-        Error = 3,
+        Error = 2,
+
+        /// <summary>
+        /// Message is a request for cancellation.
+        /// </summary>
+        Cancel = 3,
+
+        /// <summary>
+        /// Message is a notification of a request cancellation.
+        /// </summary>
+        Canceled = 4,
 
         /// <summary>
         /// The ID of the first request message type free to use.

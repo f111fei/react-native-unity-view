@@ -12,8 +12,9 @@ export interface UnityViewMessageEventData {
 export enum UnityMessageType {
     Default = 0,
     Response = 1,
-    Cancel = 2,
-    Error = 3,
+    Error = 2,
+    Cancel = 3,
+    Canceled = 4,
     Request = 9,
 }
 
@@ -69,6 +70,7 @@ interface ResponseCallback {
     id: string;
     onNext: (response: UnityMessage) => void;
     onError: (reason?: UnityMessage) => void;
+    onCanceled: () => void;
     onComplete: () => void;
 };
 
@@ -110,6 +112,7 @@ export interface UnityMessageHandler {
     readonly message: UnityMessage;
     sendResponse(data: any): void;
     sendError(error: any): void;
+    close(): void;
 }
 
 class UnityMessageImpl implements UnityMessage {
@@ -141,7 +144,7 @@ class UnityMessageImpl implements UnityMessage {
     }
 
     public isRequestCompletion(): boolean {
-        return this.uuid !== undefined && (this.type === UnityMessageType.Response || this.type === UnityMessageType.Cancel || this.type === UnityMessageType.Error);
+        return this.uuid !== undefined && (this.type === UnityMessageType.Response || this.type === UnityMessageType.Canceled || this.type === UnityMessageType.Error);
     }
 
     public isResponse(): boolean {
@@ -150,6 +153,10 @@ class UnityMessageImpl implements UnityMessage {
 
     public isCancel(): boolean {
         return this.uuid !== undefined && this.type === UnityMessageType.Cancel;
+    }
+
+    public isCanceled(): boolean {
+        return this.uuid !== undefined && this.type === UnityMessageType.Canceled;
     }
 
     public isError(): boolean {
@@ -192,7 +199,7 @@ class UnityMessageHandlerImpl implements UnityMessageHandler {
             );
         }
 
-        this.dispose();
+        this.close();
     }
 
     public sendError(error: any): void {
@@ -210,25 +217,45 @@ class UnityMessageHandlerImpl implements UnityMessageHandler {
             );
         }
 
-        this.dispose();
+        this.close();
+    }
+
+    public close(): void {
+        if (this.isRequest && this.message.uuid) {
+            if (!this.m_responseSent) {
+                this.m_responseSent = true;
+                if (this.m_isCanceled) {
+                    this.sendCanceled();
+                } else {
+                    this.sendResponse();
+                }
+            }
+
+            removeRequestCallback(this.message.uuid);
+        }
     }
 
     public cancel(): void {
         if (this.isRequest) {
             this.m_isCanceled = true;
-            this.dispose();
         }
     }
 
-    private dispose(): void {
-        if (this.isRequest && this.message.uuid) {
-            if (!this.m_responseSent) {
-                this.m_responseSent = true;
-                this.sendResponse();
-            }
-
-            removeRequestCallback(this.message.uuid);
+    private sendCanceled(): void {
+        if (this.isRequest) {
+            this.m_responseSent = true;
+            UIManager.dispatchViewManagerCommand(
+                this.m_viewHandler,
+                UIManager.UnityView.Commands.postMessage,
+                ['UnityMessageManager', 'onRNMessage', messagePrefix + JSON.stringify({
+                    id: this.message.id,
+                    type: UnityMessageType.Canceled,
+                    uuid: this.message.uuid
+                })]
+            );
         }
+
+        this.close();
     }
 }
 
@@ -364,11 +391,15 @@ export default class UnityView extends React.Component<UnityViewProps> {
                     subscriber.next(data);
                 },
                 onError: (response: UnityMessage) => {
-                    // TODO: Add well defined error format
-                    subscriber.error(response);
+                    isCompleted = true; // To block cancellation request
+                    subscriber.error(response); // TODO: Add well defined error format
+                },
+                onCanceled: () => {
+                    isCompleted = true; // To block cancellation request
+                    subscriber.error(); // TODO: Add well defined cancellation format
                 },
                 onComplete: () => {
-                    isCompleted = true; // To block cancellation
+                    isCompleted = true; // To block cancellation request
                     subscriber.complete();
                 }
             };
@@ -454,36 +485,37 @@ export default class UnityView extends React.Component<UnityViewProps> {
             var json = JSON.parse(message) as UnityMessage;
             var unityMessage = new UnityMessageImpl(json);
             if (unityMessage.isRequestCompletion()) {
-                if (unityMessage.isCancel()) {
-                    const awaitEntry = requestCallbackMessageMap[unityMessage.uuid];
-                    if (awaitEntry && awaitEntry.cancel) {
-                        awaitEntry.cancel();
+                // handle callback message
+                const awaitEntry = responseCallbackMessageMap[unityMessage.uuid];
+                if (awaitEntry) {
+                    removeResponseCallback(unityMessage.uuid);
+                    if (unityMessage.isResponse()) {
+                        if (awaitEntry.onNext) {
+                            awaitEntry.onNext(unityMessage);
+                        }
+                    } else if (unityMessage.isError()) {
+                        if (awaitEntry.onError) {
+                            awaitEntry.onError(unityMessage);
+                        }
+                    } else if (unityMessage.isCanceled()) {
+                        if (awaitEntry.onCanceled) {
+                            awaitEntry.onCanceled();
+                        }
+                    } else {
+                        console.warn("Unknown message type: " + message)
                     }
-                } else {
-                    // handle callback message
-                    const awaitEntry = responseCallbackMessageMap[unityMessage.uuid];
-                    if (awaitEntry) {
-                        removeResponseCallback(unityMessage.uuid);
-                        if (unityMessage.isResponse()) {
-                            if (awaitEntry.onNext) {
-                                awaitEntry.onNext(unityMessage);
-                            }
-                        } else if (unityMessage.isError()) {
-                            if (awaitEntry.onError) {
-                                awaitEntry.onError(unityMessage);
-                            }
-                        } else {
-                            console.warn("Unknown message type: " + message)
-                        }
 
-                        if (awaitEntry.onComplete != null) {
-                            awaitEntry.onComplete();
-                        }
+                    if (awaitEntry.onComplete != null) {
+                        awaitEntry.onComplete();
                     }
                 }
+            } else if (unityMessage.isCancel()) {
+                const handler = requestCallbackMessageMap[unityMessage.uuid];
+                if (handler && handler.cancel) {
+                    handler.cancel();
+                }
             } else if (this.props.onUnityMessage) {
-                let handler = new UnityMessageHandlerImpl(this.getViewHandle(), unityMessage as UnityMessageImpl);
-
+                const handler = new UnityMessageHandlerImpl(this.getViewHandle(), unityMessage as UnityMessageImpl);
                 if (handler.isRequest) {
                     requestCallbackMessageMap[unityMessage.uuid] = handler;
                 }

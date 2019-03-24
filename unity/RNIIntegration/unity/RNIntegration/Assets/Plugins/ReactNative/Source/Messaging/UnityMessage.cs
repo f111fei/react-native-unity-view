@@ -48,7 +48,7 @@ namespace ReactNative
         /// <summary>
         /// Gets a boolean flag indicating whether this is a response, cancel or error message.
         /// </summary>
-        public bool IsRequestCompletion => this.uuid.HasValue && (this.type == (int)UnityMessageType.Response || this.type == (int)UnityMessageType.Error || this.type == (int)UnityMessageType.Cancel);
+        public bool IsRequestCompletion => this.uuid.HasValue && (this.type == (int)UnityMessageType.Response || this.type == (int)UnityMessageType.Error || this.type == (int)UnityMessageType.Canceled);
 
         /// <summary>
         /// Gets a boolean flag indicating whether this is a response message.
@@ -56,14 +56,19 @@ namespace ReactNative
         public bool IsResponse => this.uuid.HasValue && this.type == (int)UnityMessageType.Response;
 
         /// <summary>
+        /// Gets a boolean flag indicating whether this is an error message.
+        /// </summary>
+        public bool IsError => this.uuid.HasValue && this.type == (int)UnityMessageType.Error;
+
+        /// <summary>
         /// Gets a boolean flag indicating whether this is a cancellation request.
         /// </summary>
         public bool IsCancel => this.uuid.HasValue && this.type == (int)UnityMessageType.Cancel;
 
         /// <summary>
-        /// Gets a boolean flag indicating whether this is an error message.
+        /// Gets a boolean flag indicating whether this is a cancellation notification.
         /// </summary>
-        public bool IsError => this.uuid.HasValue && this.type == (int)UnityMessageType.Error;
+        public bool IsCanceled => this.uuid.HasValue && this.type == (int)UnityMessageType.Canceled;
 
 
         /// <summary>

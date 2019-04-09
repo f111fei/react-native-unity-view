@@ -72,6 +72,14 @@ namespace ReactNative
 
 
         /// <summary>
+        /// Converts message type to a given enum type.
+        /// </summary>
+        /// <typeparam name="T">The type to use for conversion.</typeparam>
+        /// <returns>The data in a given type.</returns>
+        public T GetType<T>() where T: Enum
+            => (T)Enum.ToObject(typeof(T), this.type);
+
+        /// <summary>
         /// Converts message data to a given type.
         /// </summary>
         /// <typeparam name="T">The type to use for conversion.</typeparam>

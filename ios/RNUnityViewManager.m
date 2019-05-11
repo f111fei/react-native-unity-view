@@ -14,14 +14,16 @@
 @synthesize bridge = _bridge;
 
 RCT_EXPORT_MODULE(UnityView)
-RCT_EXPORT_VIEW_PROPERTY(onMessage, RCTDirectEventBlock)
 
 - (UIView *)view
 {
-    [self createUnity];
     self.currentView = [[RNUnityView alloc] init];
-    if (self.isUnityReady) {
+    if ([UnityUtils isUnityReady]) {
         [self.currentView setUnityView: [GetAppController() unityView]];
+    } else {
+        [UnityUtils createPlayer:^{
+            [self.currentView setUnityView: [GetAppController() unityView]];
+        }];
     }
     return self.currentView;
 }
@@ -34,67 +36,6 @@ RCT_EXPORT_VIEW_PROPERTY(onMessage, RCTDirectEventBlock)
 + (BOOL)requiresMainQueueSetup
 {
     return YES;
-}
-
-+ (void)listenAppState
-{
-    for (NSString *name in @[UIApplicationDidBecomeActiveNotification,
-                             UIApplicationDidEnterBackgroundNotification,
-                             UIApplicationWillTerminateNotification,
-                             UIApplicationWillResignActiveNotification,
-                             UIApplicationWillEnterForegroundNotification,
-                             UIApplicationDidReceiveMemoryWarningNotification]) {
-        
-        [[NSNotificationCenter defaultCenter] addObserver:self
-                                                 selector:@selector(handleAppStateDidChange:)
-                                                     name:name
-                                                   object:nil];
-    }
-}
-
-+ (void)handleAppStateDidChange:(NSNotification *)notification
-{
-    UnityAppController* unityAppController = GetAppController();
-    
-    UIApplication* application = [UIApplication sharedApplication];
-    
-    if ([notification.name isEqualToString:UIApplicationWillResignActiveNotification]) {
-        [unityAppController applicationWillResignActive:application];
-    } else if ([notification.name isEqualToString:UIApplicationDidEnterBackgroundNotification]) {
-        [unityAppController applicationDidEnterBackground:application];
-    } else if ([notification.name isEqualToString:UIApplicationWillEnterForegroundNotification]) {
-        [unityAppController applicationWillEnterForeground:application];
-    } else if ([notification.name isEqualToString:UIApplicationDidBecomeActiveNotification]) {
-        [unityAppController applicationDidBecomeActive:application];
-    } else if ([notification.name isEqualToString:UIApplicationWillTerminateNotification]) {
-        [unityAppController applicationWillTerminate:application];
-    } else if ([notification.name isEqualToString:UIApplicationDidReceiveMemoryWarningNotification]) {
-		[unityAppController applicationDidReceiveMemoryWarning:application];
-	}
-}
-
-- (void)handleUnityReady {
-    self.isUnityReady = YES;
-    if (self.currentView) {
-        [self.currentView setUnityView: [GetAppController() unityView]];
-    }
-}
-
-- (void)createUnity {
-    if (UnityIsInited()) {
-        return;
-    }
-    UIApplication* application = [UIApplication sharedApplication];
-    // Always keep RN window in top
-    application.keyWindow.windowLevel = UIWindowLevelNormal + 1;
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleUnityReady) name:@"UnityReady" object:nil];
-    
-    InitUnity();
-    
-    UnityAppController *controller = GetAppController();
-    [controller application:application didFinishLaunchingWithOptions:self.bridge.launchOptions];
-    [controller applicationDidBecomeActive:application];
-    [RNUnityViewManager listenAppState];
 }
 
 - (void)setBridge:(RCTBridge *)bridge {

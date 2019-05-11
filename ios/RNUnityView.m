@@ -13,15 +13,11 @@
 - (id)initWithFrame:(CGRect)frame
 {
     self = [super initWithFrame:frame];
-    if (self){
-        [UnityUtils addUnityEventListener:self];
-    }
     return self;
 }
 
 - (void)dealloc
 {
-    [UnityUtils removeUnityEventListener:self];
 }
 
 - (void)setUnityView:(UnityView *)view
@@ -37,14 +33,6 @@
     [self insertSubview:(UIView *)self.uView atIndex:0];
     ((UIView *)self.uView).frame = self.bounds;
     [(UIView *)self.uView setNeedsLayout];
-}
-
-- (void)onMessage:(NSString *)message {
-    if (_onMessage) {
-        _onMessage(@{
-            @"message": message,
-        });
-    }
 }
 
 @end

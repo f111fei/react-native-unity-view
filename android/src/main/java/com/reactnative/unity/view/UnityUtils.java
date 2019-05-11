@@ -22,9 +22,9 @@ public class UnityUtils {
         void onReady();
     }
 
-
     private static UnityPlayer unityPlayer;
     private static boolean _isUnityReady;
+    private static boolean _isUnityPaused;
 
     private static final CopyOnWriteArraySet<UnityEventListener> mUnityEventListeners =
             new CopyOnWriteArraySet<>();
@@ -40,11 +40,15 @@ public class UnityUtils {
         return _isUnityReady;
     }
 
-    public static void createPlayer(final Context context, final CreateCallback callback) {
+    public static boolean isUnityPaused() {
+        return _isUnityPaused;
+    }
+
+    public static void createPlayer(final Activity activity, final CreateCallback callback) {
         if (unityPlayer != null) {
+            callback.onReady();
             return;
         }
-        final Activity activity = ((Activity)context);
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -81,7 +85,24 @@ public class UnityUtils {
     }
 
     public static void postMessage(String gameObject, String methodName, String message) {
+        if (!_isUnityReady) {
+            return;
+        }
         UnityPlayer.UnitySendMessage(gameObject, methodName, message);
+    }
+
+    public static void pause() {
+        if (unityPlayer != null) {
+            unityPlayer.pause();
+            _isUnityPaused = true;
+        }
+    }
+
+    public static void resume() {
+        if (unityPlayer != null) {
+            unityPlayer.resume();
+            _isUnityPaused = false;
+        }
     }
 
     /**
@@ -126,7 +147,8 @@ public class UnityUtils {
         if (unityPlayer.getParent() != null) {
             ((ViewGroup)unityPlayer.getParent()).removeView(unityPlayer);
         }
-        group.addView(unityPlayer, MATCH_PARENT, MATCH_PARENT);
+        ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT);
+        group.addView(unityPlayer, 0, layoutParams);
         unityPlayer.windowFocusChanged(true);
         unityPlayer.requestFocus();
         unityPlayer.resume();

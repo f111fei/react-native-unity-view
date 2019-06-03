@@ -90,10 +90,10 @@ export default class UnityView extends React.Component<UnityViewProps> {
     /**
      * [Deprecated] Use `UnityModule.postMessageAsync` instead.
      */
-    public postMessageAsync<T>(request: IUnityRequest, gameObject?: string, methodName?: string): Observable<T>;
-    public postMessageAsync<T>(id: string, data: any, gameObject?: string, methodName?: string): Observable<T>;
-    public postMessageAsync<T>(id: string, type: UnityMessageType | number, data: any, gameObject?: string, methodName?: string): Observable<T>;
-    public postMessageAsync<T>(first: string | IUnityRequest, second: any, third: any, fourth?: string, fifth?: string): Observable<T> {
+    public postMessageAsync<TResponse = any, TType extends number = UnityMessageType>(request: IUnityRequest<TType, TResponse>, gameObject?: string, methodName?: string): Observable<TResponse>;
+    public postMessageAsync<TResponse = any, TType extends number = UnityMessageType>(id: string, data: any, gameObject?: string, methodName?: string): Observable<TResponse>;
+    public postMessageAsync<TResponse = any, TType extends number = UnityMessageType>(id: string, type: TType, data: any, gameObject?: string, methodName?: string): Observable<TResponse>;
+    public postMessageAsync<TResponse = any, TType extends number = UnityMessageType>(first: string | IUnityRequest<TType, TResponse>, second: any, third: any, fourth?: string, fifth?: string): Observable<TResponse> {
         return UnityModule.postMessageAsync(first as any, second, third, fourth, fifth);
     }
 

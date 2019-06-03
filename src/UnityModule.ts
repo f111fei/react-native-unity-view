@@ -54,7 +54,7 @@ export interface UnityModule {
      * @param gameObject (optional) The Name of GameObject. Also can be a path string.
      * @param methodName (optional) Method name in GameObject instance.
      */
-    postMessageAsync<T>(request: IUnityRequest, gameObject?: string, methodName?: string): Observable<T>;
+    postMessageAsync<TResponse = any, TType extends number = UnityMessageType>(request: IUnityRequest<TType, TResponse>, gameObject?: string, methodName?: string): Observable<TResponse>;
     /**
      * Send Message to UnityMessageManager.
      * @param id The request target ID to post.
@@ -62,7 +62,7 @@ export interface UnityModule {
      * @param gameObject (optional) The Name of GameObject. Also can be a path string.
      * @param methodName (optional) Method name in GameObject instance.
      */
-    postMessageAsync<T>(id: string, data: any, gameObject?: string, methodName?: string): Observable<T>;
+    postMessageAsync<TResponse = any, TType extends number = UnityMessageType>(id: string, data: any, gameObject?: string, methodName?: string): Observable<TResponse>;
     /**
     * Send Message to UnityMessageManager.
     * @param id The request target ID to post.
@@ -71,7 +71,7 @@ export interface UnityModule {
     * @param gameObject (optional) The Name of GameObject. Also can be a path string.
     * @param methodName (optional) Method name in GameObject instance.
     */
-    postMessageAsync<T>(id: string, type: UnityMessageType | number, data: any, gameObject?: string, methodName?: string): Observable<T>;
+    postMessageAsync<TResponse = any, TType extends number = UnityMessageType>(id: string, type: TType, data: any, gameObject?: string, methodName?: string): Observable<TResponse>;
     /**
      * Pause the unity player
      */
@@ -182,7 +182,7 @@ class UnityModuleImpl implements UnityModule {
      * @param gameObject (optional) The Name of GameObject. Also can be a path string.
      * @param methodName (optional) Method name in GameObject instance.
      */
-    public postMessageAsync<T>(request: IUnityRequest, gameObject?: string, methodName?: string): Observable<T>;
+    public postMessageAsync<TResponse = any, TType extends number = UnityMessageType>(request: IUnityRequest<TType, TResponse>, gameObject?: string, methodName?: string): Observable<TResponse>;
     /**
      * Send Message to UnityMessageManager.
      * @param id The request target ID to post.
@@ -190,7 +190,7 @@ class UnityModuleImpl implements UnityModule {
      * @param gameObject (optional) The Name of GameObject. Also can be a path string.
      * @param methodName (optional) Method name in GameObject instance.
      */
-    public postMessageAsync<T>(id: string, data: any, gameObject?: string, methodName?: string): Observable<T>;
+    public postMessageAsync<TResponse = any, TType extends number = UnityMessageType>(id: string, data: any, gameObject?: string, methodName?: string): Observable<TResponse>;
     /**
     * Send Message to UnityMessageManager.
     * @param id The request target ID to post.
@@ -199,8 +199,8 @@ class UnityModuleImpl implements UnityModule {
     * @param gameObject (optional) The Name of GameObject. Also can be a path string.
     * @param methodName (optional) Method name in GameObject instance.
     */
-    public postMessageAsync<T>(id: string, type: UnityMessageType | number, data: any, gameObject?: string, methodName?: string): Observable<T>;
-    public postMessageAsync<T>(first: string | IUnityRequest, second: any, third: any, fourth?: string, fifth?: string): Observable<T> {
+    public postMessageAsync<TResponse = any, TType extends number = UnityMessageType>(id: string, type: TType, data: any, gameObject?: string, methodName?: string): Observable<TResponse>;
+    public postMessageAsync<TResponse = any, TType extends number = UnityMessageType>(first: string | IUnityRequest<TType, TResponse>, second: any, third: any, fourth?: string, fifth?: string): Observable<TResponse> {
         var id: string;
         var type: number;
         var data: any;
@@ -210,20 +210,20 @@ class UnityModuleImpl implements UnityModule {
             id = first;
 
             if (typeof second === 'number') {
-                /* postMessageAsync<T>(id: string, type: UnityMessageType | number, data: any, gameObject?: string, methodName?: string) */
+                /* postMessageAsync<TResponse>(id: string, type: UnityMessageType | number, data: any, gameObject?: string, methodName?: string) */
                 type = second;
                 data = third;
                 gameObject = fourth;
                 methodName = fifth;
             } else {
-                /* postMessageAsync<T>(id: string, data: any, gameObject?: string, methodName?: string) */
+                /* postMessageAsync<TResponse>(id: string, data: any, gameObject?: string, methodName?: string) */
                 type = UnityMessageType.Request;
                 data = second;
                 gameObject = third;
                 methodName = fourth;
             }
         } else {
-            /* postMessageAsync<T>(request: UnityRequest, gameObject?: string, methodName?: string) */
+            /* postMessageAsync<TResponse>(request: UnityRequest, gameObject?: string, methodName?: string) */
             id = first.id;
             type = first.type;
             data = first.data;
@@ -238,13 +238,13 @@ class UnityModuleImpl implements UnityModule {
             gameObject = 'UnityMessageManager';
         }
 
-        return new Observable<T>((subscriber: Subscriber<T>): TeardownLogic => {
+        return new Observable<TResponse>((subscriber: Subscriber<TResponse>): TeardownLogic => {
             var isCompleted: boolean = false;
             const uuid = generateUuid();
             responseCallbackMessageMap[uuid] = {
                 id: id,
                 onNext: (response: UnityMessage) => {
-                    var data = response.data as T;
+                    var data = response.data as TResponse;
                     subscriber.next(data);
                 },
                 onError: (response: UnityMessage) => {

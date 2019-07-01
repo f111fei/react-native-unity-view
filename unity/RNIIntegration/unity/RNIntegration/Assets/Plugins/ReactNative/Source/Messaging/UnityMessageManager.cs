@@ -371,7 +371,7 @@ namespace ReactNative
                 if (subscriptionInfo == null)
                 {
                     subscriptionInfo = new Subscription(
-                        this.name,
+                        id,
                         handler,
                         (self) => this.Unsubscribe(self));
                     list[list.Length - 1] = subscriptionInfo;

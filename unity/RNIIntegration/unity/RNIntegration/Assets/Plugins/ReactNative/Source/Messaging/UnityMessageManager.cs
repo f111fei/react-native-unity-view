@@ -1,4 +1,6 @@
-﻿using fastJSON;
+﻿// #define DEBUG_MESSAGING
+
+using fastJSON;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -661,7 +663,9 @@ namespace ReactNative
         {
             if (!message.StartsWith(MessagePrefix))
             {
+#if DEBUG_MESSAGING
                 Debug.Log("Unformatted: " + message);
+#endif
                 return;
             }
 
@@ -670,17 +674,23 @@ namespace ReactNative
             UnityMessage unityMessage = JSON.ToObject<UnityMessage>(message);
             if (unityMessage.IsRequestCompletion)
             {
+#if DEBUG_MESSAGING
                 Debug.Log($"onResponse[{unityMessage.uuid}]: {message}");
+#endif
                 instance?.TryResolveRequest(unityMessage);
             }
             else if (unityMessage.IsCancel)
             {
+#if DEBUG_MESSAGING
                 Debug.Log($"onCancel[{unityMessage.uuid}]: {message}");
+#endif
                 instance?.TryCancelRequest(unityMessage);
             }
             else
             {
+#if DEBUG_MESSAGING
                 Debug.Log($"onUnityMessage[{unityMessage.uuid}]: {message}");
+#endif
             }
         }
 #endif

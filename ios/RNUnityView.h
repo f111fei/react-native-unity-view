@@ -12,10 +12,10 @@
 #import "UnityAppController.h"
 #import "UnityUtils.h"
 
-@interface RNUnityView : UIView<UnityEventListener>
+@interface RNUnityView : UIView
 
-@property (nonatomic, strong) UIView* uView;
+@property (nonatomic, strong) UnityView* uView;
 
-@property (nonatomic, copy) RCTDirectEventBlock onMessage;
+- (void)setUnityView:(UnityView *)view;
 
 @end

@@ -5,11 +5,9 @@ import android.view.View;
 
 import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.ReactApplicationContext;
-import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.common.MapBuilder;
 import com.facebook.react.uimanager.SimpleViewManager;
 import com.facebook.react.uimanager.ThemedReactContext;
-import com.unity3d.player.UnityPlayer;
 
 import java.util.Map;
 
@@ -21,12 +19,6 @@ import javax.annotation.Nullable;
 
 public class UnityViewManager extends SimpleViewManager<UnityView> implements LifecycleEventListener, View.OnAttachStateChangeListener {
     private static final String REACT_CLASS = "UnityView";
-
-    public static final int COMMAND_POST_MESSAGE = 1;
-    public static final int COMMAND_PAUSE = 2;
-    public static final int COMMAND_RESUME = 3;
-
-    private static boolean DONOT_RESUME = false;
 
     private ReactApplicationContext context;
 
@@ -42,89 +34,70 @@ public class UnityViewManager extends SimpleViewManager<UnityView> implements Li
     }
 
     @Override
-    public @Nullable Map<String, Integer> getCommandsMap() {
-        return MapBuilder.of(
-                "postMessage", COMMAND_POST_MESSAGE,
-                "pause", COMMAND_PAUSE,
-                "resume", COMMAND_RESUME
-        );
-    }
-
-    @Override
-    public void receiveCommand(UnityView root, int commandId, @Nullable ReadableArray args) {
-        switch (commandId) {
-            case COMMAND_POST_MESSAGE:
-                String gameObject = args.getString(0);
-                String methodName = args.getString(1);
-                String message = args.getString(2);
-                UnityUtils.postMessage(gameObject, methodName, message);
-                break;
-            case COMMAND_PAUSE:
-                UnityUtils.getPlayer().pause();
-                DONOT_RESUME = true;
-                break;
-            case COMMAND_RESUME:
-                UnityUtils.getPlayer().resume();
-                DONOT_RESUME = false;
-                break;                
-        }
-    }
-
-    @Override
     protected UnityView createViewInstance(ThemedReactContext reactContext) {
-        UnityView view = new UnityView(reactContext, UnityUtils.getPlayer());
-        UnityUtils.addUnityEventListener(view);
+        final UnityView view = new UnityView(reactContext);
         view.addOnAttachStateChangeListener(this);
+
+        if (UnityUtils.getPlayer() != null) {
+            view.setUnityPlayer(UnityUtils.getPlayer());
+        } else {
+            UnityUtils.createPlayer(context.getCurrentActivity(), new UnityUtils.CreateCallback() {
+                @Override
+                public void onReady() {
+                    view.setUnityPlayer(UnityUtils.getPlayer());
+                }
+            });
+        }
         return view;
     }
 
     @Override
     public void onDropViewInstance(UnityView view) {
-        UnityUtils.removeUnityEventListener(view);
         view.removeOnAttachStateChangeListener(this);
         super.onDropViewInstance(view);
     }
 
     @Override
-    public @Nullable Map getExportedCustomDirectEventTypeConstants() {
-        return MapBuilder.of(
-                UnityMessageEvent.EVENT_NAME, MapBuilder.of("registrationName", "onMessage")
-        );
-    }
-
-    @Override
     public void onHostResume() {
-        if (!UnityUtils.hasUnityPlayer()) {
-            UnityUtils.createPlayer(context.getCurrentActivity());
-        } else {
-            if (!DONOT_RESUME) {
-                UnityUtils.getPlayer().resume();
-            }
+        if (UnityUtils.isUnityReady()) {
+            UnityUtils.getPlayer().resume();
+            restoreUnityUserState();
         }
     }
 
     @Override
     public void onHostPause() {
-        UnityUtils.getPlayer().pause();
+        if (UnityUtils.isUnityReady()) {
+            // Don't use UnityUtils.pause()
+            UnityUtils.getPlayer().pause();
+        }
     }
 
     @Override
     public void onHostDestroy() {
-        UnityUtils.getPlayer().quit();
+        if (UnityUtils.isUnityReady()) {
+            UnityUtils.getPlayer().quit();
+        }
     }
 
-    @Override
-    public void onViewAttachedToWindow(View v) {
+    private void restoreUnityUserState() {
         // restore the unity player state
-        if (DONOT_RESUME) {
+        if (UnityUtils.isUnityPaused()) {
             Handler handler = new Handler();
             handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    UnityUtils.getPlayer().pause();
+                    if (UnityUtils.getPlayer() != null) {
+                        UnityUtils.getPlayer().pause();
+                    }
                 }
             }, 300); //TODO: 300 is the right one?
         }
+    }
+
+    @Override
+    public void onViewAttachedToWindow(View v) {
+        restoreUnityUserState();
     }
 
     @Override

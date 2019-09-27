@@ -7,9 +7,11 @@
 extern "C" {
 #endif
     
+void InitArgs(int argc, char* argv[]);
+    
 bool UnityIsInited(void);
 
-void InitUnity(void);
+void InitUnity();
 
 void UnityPostMessage(NSString* gameObject, NSString* methodName, NSString* message);
 
@@ -27,6 +29,8 @@ void UnityResumeCommand();
 
 @interface UnityUtils : NSObject
 
++ (BOOL)isUnityReady;
++ (void)createPlayer:(void (^)(void))completed;
 + (void)addUnityEventListener:(id<UnityEventListener>)listener;
 + (void)removeUnityEventListener:(id<UnityEventListener>)listener;
 

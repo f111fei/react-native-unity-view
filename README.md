@@ -6,6 +6,10 @@ Integrate unity3d within a React Native app. Add a react native component to sho
 
 See [react-native-unity-demo](https://github.com/f111fei/react-native-unity-demo)
 
+Recommend Clone The Demo Project to Learn API.
+
+Make sure you run the Demo properly before opening the Issue.
+
 ## Preview
 
 ![gif](https://user-images.githubusercontent.com/7069719/37143096-12be6810-22f5-11e8-89d8-562e9213072e.gif)
@@ -63,6 +67,14 @@ Android will export unity project to `android/UnityExport`.
 
 IOS will export unity project to `ios/UnityExport`.
 
+### Add UnityMessageManager Support
+
+Copy [`UnityMessageManager.cs`](https://github.com/f111fei/react-native-unity-demo/blob/master/unity/Cube/Assets/Scripts/UnityMessageManager.cs) to your unity project.
+
+Copy [`Newtonsoft.Json`](https://github.com/f111fei/react-native-unity-demo/tree/master/unity/Cube/Assets/Scripts/Newtonsoft.Json) to your unity project.
+
+Copy [`link.xml`](https://github.com/f111fei/react-native-unity-demo/blob/master/unity/Cube/Assets/link.xml) to your unity project.
+
 ### Configure Native Build
 
 #### Android Build
@@ -93,9 +105,24 @@ project(":UnityExport").projectDir = file("./UnityExport")
 
 ![image](https://user-images.githubusercontent.com/7069719/37325486-182c7bd4-26c9-11e8-9fc0-8e1a149d30b2.png)
 
+5. Modify `main.m`
+
+```
+#import "UnityUtils.h"
+
+int main(int argc, char * argv[]) {
+  @autoreleasepool {
+    InitArgs(argc, argv);
+    return UIApplicationMain(argc, argv, nil, NSStringFromClass([AppDelegate class]));
+  }
+}
+```
+
+> **Do not run in the simulator**
+
 ### Use In React Native
 
-#### Props
+#### UnityView Props
 
 ##### `onMessage`
 
@@ -130,7 +157,45 @@ render() {
 }
 ```
 
-#### Methods
+##### `onUnityMessage`
+
+[**Recommended**]Receive json message from unity.
+
+```
+onUnityMessage(handler) {
+    console.log(handler.name); // the message name
+    console.log(handler.data); // the message data
+    setTimeout(() => {
+      // You can also create a callback to Unity.
+      handler.send('I am callback!');
+    }, 2000);
+}
+
+render() {
+    return (
+        <View style={[styles.container]}>
+            <UnityView
+                style={style.unity}
+                onUnityMessage={this.onMessage.bind(this)}
+            />
+        </View>
+    );
+}
+```
+
+#### UnityModule
+
+```
+import { UnityModule } from 'react-native-unity-view';
+```
+
+##### `isReady(): Promise<boolean>`
+
+Return whether is unity ready.
+
+##### `createUnity(): Promise<boolean>`
+
+Manual init the Unity. Usually Unity is auto created when the first view is added.
 
 ##### `postMessage(gameObject: string, methodName: string, message: string)`
 
@@ -160,7 +225,7 @@ public class Rotate : MonoBehaviour {
 onToggleRotate() {
     if (this.unity) {
       // gameobject param also can be 'Cube'.
-      this.unity.postMessage('GameObject/Cube', 'toggleRotate', 'message');
+      UnityModule.postMessage('GameObject/Cube', 'toggleRotate', 'message');
     }
 }
 
@@ -178,7 +243,7 @@ render() {
 
 ```
 
-##### `postMessageToUnityManager(message: string)`
+##### `postMessageToUnityManager(message: string | UnityViewMessage)`
 
 Send message to `UnityMessageManager`.
 
@@ -216,9 +281,7 @@ void toggleRotate(string message)
 
 ```
 onToggleRotate() {
-    if (this.unity) {
-      this.unity.postMessageToUnityManager('message');
-    }
+    UnityModule.postMessageToUnityManager('message');
 }
 
 render() {
@@ -233,6 +296,18 @@ render() {
     );
 }
 ```
+
+##### `addMessageListener(listener: (message: string | MessageHandler) => void): number`
+
+Receive string and json message from unity.
+
+##### `addStringMessageListener(listener: (message: string) => void): number`
+
+Only receive string message from unity.
+
+##### `addUnityMessageListener(listener: (handler: MessageHandler) => void): number`
+
+Only receive json message from unity.
 
 ##### `pause()`
 

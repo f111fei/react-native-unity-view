@@ -96,6 +96,10 @@ export interface UnityModule {
      * Remove message listener.
      */
     removeMessageListener(handleId: number): void;
+    /**
+     * Clears pending requests before shutting down the module.
+     */
+    clear();
 }
 
 let sequence = 0;
@@ -321,6 +325,25 @@ class UnityModuleImpl implements UnityModule {
         }
         if (this.stringListeners[registrationToken]) {
             delete this.stringListeners[registrationToken];
+        }
+    }
+
+    public clear() {
+        for (var key in requestCallbackMessageMap) {
+            let awaitEntry = requestCallbackMessageMap[key];
+            removeRequestCallback(key);
+            if (awaitEntry && awaitEntry.close) {
+                awaitEntry.close();
+            }
+        }
+
+        // Cancel all subscription
+        for (var key in responseCallbackMessageMap) {
+            let awaitEntry = responseCallbackMessageMap[key];
+            removeResponseCallback(key);
+            if (awaitEntry && awaitEntry.onCanceled) {
+                awaitEntry.onCanceled();
+            }
         }
     }
 

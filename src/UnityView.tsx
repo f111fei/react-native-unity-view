@@ -19,24 +19,7 @@ export interface UnityViewProps extends ViewProperties {
     */
     onUnityMessage?: (handler: UnityMessageHandler) => void;
 }
-// public componentWillUnmount() {
-//     for (var key in requestCallbackMessageMap) {
-//         let awaitEntry = requestCallbackMessageMap[key];
-//         removeRequestCallback(key);
-//         if (awaitEntry && awaitEntry.cancel) {
-//             awaitEntry.cancel();
-//         }
-//     }
 
-//     // Complete all subscription
-//     for (var key in responseCallbackMessageMap) {
-//         let awaitEntry = responseCallbackMessageMap[key];
-//         removeResponseCallback(key);
-//         if (awaitEntry && awaitEntry.onComplete) {
-//             awaitEntry.onComplete();
-//         }
-//     }
-// }
 export default class UnityView extends React.Component<UnityViewProps> {
     private m_registrationToken: number;
 
@@ -49,9 +32,7 @@ export default class UnityView extends React.Component<UnityViewProps> {
         super(props);
 
         this.setNativeUnityView = this.setNativeUnityView.bind(this);
-    }
 
-    public componentWillMount() {
         this.m_registrationToken = UnityModule.addMessageListener(message => {
             if (this.props.onUnityMessage && message instanceof UnityMessageHandlerImpl) {
                 this.props.onUnityMessage(message);
@@ -64,6 +45,7 @@ export default class UnityView extends React.Component<UnityViewProps> {
 
     public componentWillUnmount() {
         UnityModule.removeMessageListener(this.m_registrationToken);
+        UnityModule.clear();
     }
 
     /**

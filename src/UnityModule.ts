@@ -434,8 +434,8 @@ class UnityModuleImpl implements UnityModule {
             result.type = 'Response';
         } else if (result.type == UnityMessageType.Default) {
             result.type = 'Default';
-        } else {
-            result.type = result.type + ' Custom';
+        } else if (result.type !== undefined && result.type !== null) {
+            result.type = 'Custom[' + result.type + ']';
         }
 
         return result;

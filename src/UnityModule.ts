@@ -6,6 +6,8 @@ import { IUnityRequest } from './UnityRequest';
 
 const { UnityNativeModule } = NativeModules;
 
+declare const __DEBUG_UNITY_VIEW__: boolean;
+
 interface ResponseCallback {
     id: string;
     onNext: (response: UnityMessage) => void;
@@ -349,8 +351,8 @@ class UnityModuleImpl implements UnityModule {
 
     private handleMessage(message: string): string | UnityMessageHandler | undefined {
         if (UnityMessageImpl.isUnityMessage(message)) {
-            if (__DEV__) {
-                console.log('Received: ' + message.substr(UnityMessagePrefix.length));
+            if (__DEBUG_UNITY_VIEW__) {
+                console.log(this.prettify(message.substr(UnityMessagePrefix.length)));
             }
 
             var unityMessage = new UnityMessageImpl(message);
@@ -395,8 +397,8 @@ class UnityModuleImpl implements UnityModule {
                 return handler;
             }
         } else {
-            if (__DEV__) {
-                console.log('Received plain: ' + message);
+            if (__DEBUG_UNITY_VIEW__) {
+                console.log('Received: ' + message);
             }
 
             return message;
@@ -404,16 +406,40 @@ class UnityModuleImpl implements UnityModule {
     }
 
     private postMessageInternal(gameObject: string, methodName: string, message: string) {
-        if (__DEV__) {
+        if (__DEBUG_UNITY_VIEW__) {
             if (message.startsWith(UnityMessagePrefix)) {
-                console.log('Sending: ' + message.substr(UnityMessagePrefix.length));
+                console.log(this.prettify(message.substr(UnityMessagePrefix.length)));
             } else {
-                console.log('Sending: ' + message);
+                console.log('Sent: ', message);
             }
         }
 
         UnityNativeModule.postMessage(gameObject, methodName, message);
     };
+
+    private prettify(message: string): Object {
+        var result = JSON.parse(message);
+
+        if (result.type > UnityMessageType.Request) {
+            result.type = 'Request + ' + (result.type - UnityMessageType.Request);
+        } else if (result.type == UnityMessageType.Request) {
+            result.type = 'Request';
+        } else if (result.type == UnityMessageType.Canceled) {
+            result.type = 'Canceled';
+        } else if (result.type == UnityMessageType.Cancel) {
+            result.type = 'Cancel';
+        } else if (result.type == UnityMessageType.Error) {
+            result.type = 'Error';
+        } else if (result.type == UnityMessageType.Response) {
+            result.type = 'Response';
+        } else if (result.type == UnityMessageType.Default) {
+            result.type = 'Default';
+        } else {
+            result.type = result.type + ' Custom';
+        }
+
+        return result;
+    }
 }
 
 export const UnityModule: UnityModule = new UnityModuleImpl();

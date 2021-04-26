@@ -36,6 +36,7 @@ examples/
 # Xcode
 #
 build/
+[Bb]uilds/
 *.pbxuser
 !default.pbxuser
 *.mode1v3
@@ -67,16 +68,16 @@ android/*.iml
 /android/.project
 /android/.settings
 /out
-package-lock.json
-android/
 
 # Visual Studio
 .vs/
 bin/
 obj/
-out/
 
 #unity
 Library/
 Temp/
-UserSettings/
+.vs/
+*.csproj
+*.sln
+

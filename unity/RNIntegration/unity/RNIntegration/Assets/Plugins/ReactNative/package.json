@@ -1,0 +1,27 @@
+{
+  "name": "com.unity.modules.reactnative",
+  "displayName": "ReactNative bridge for Unity",
+  "version": "1.2.0",
+  "unity": "2020.3",
+  "description": "",
+  "keywords": [
+    "react",
+    "react-native"
+  ],
+  "scopedRegistries": [
+    {
+      "name": "Packages from jillejr",
+      "url": "https://npm.cloudsmith.io/jillejr/newtonsoft-json-for-unity/",
+      "scopes": [
+        "jillejr"
+      ]
+    }
+  ],
+  "dependencies": {
+    "jillejr.newtonsoft.json-for-unity": "13.0.102"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:coder89/react-native-unity-view.git"
+  }
+}

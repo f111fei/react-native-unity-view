@@ -10,6 +10,7 @@
         ],
         "jsx": "react",
         "sourceMap": true,
-        "declaration": true
+        "declaration": true,
+        "skipLibCheck": true
     }
 }

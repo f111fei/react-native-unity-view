@@ -1,19 +1,14 @@
 using ReactNative;
 using Reinforced.Typings;
-using Reinforced.Typings.Ast;
 using Reinforced.Typings.Ast.TypeNames;
 using Reinforced.Typings.Attributes;
 using Reinforced.Typings.Fluent;
-using Reinforced.Typings.Generators;
 using System;
-using System.CodeDom;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Threading;
-using System.Threading.Tasks;
 using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEngine;
@@ -48,7 +43,7 @@ public static class TypeScriptGenerator
         var context = new Reinforced.Typings.ExportContext(assemblies)
         {
             ConfigurationMethod = Configure,
-            TargetFile = "../src/unity.ts",
+            TargetFile = "../../src/unity.ts",
         };
 
         context.Global.UseModules = true;
@@ -182,8 +177,6 @@ public static class TypeScriptGenerator
                         .Where(m => m.CanWrite && !m.Name.Equals("item", StringComparison.InvariantCultureIgnoreCase) && !m.IsSpecialName));
                 }
             });
-
-        Debug.LogError("Done");
     }
 
     public static IEnumerable<Type> ExtractUnityMessageEnums(Type requestType)
@@ -269,11 +262,6 @@ public static class TypeScriptGenerator
     {
         if (t.IsNullable())
         {
-            if (t.FullName.Contains("Alignment"))
-            {
-                Debug.LogError(t.GetArg().Name + " " + t.IsNullable());
-            }
-
             yield return t.GetArg();
         }
         else if (t.IsDictionary())

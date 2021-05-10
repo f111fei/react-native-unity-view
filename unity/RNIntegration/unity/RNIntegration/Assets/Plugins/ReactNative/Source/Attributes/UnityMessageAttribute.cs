@@ -1,18 +1,22 @@
 ﻿using System;
-using UnityEngine.Scripting;
 
 namespace ReactNative
 {
-    public class UnityMessageAttribute : PreserveAttribute
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = true)]
+    public sealed class UnityMessageAttribute : Attribute
     {
-        public UnityMessageAttribute(int messageID)
+        public UnityMessageAttribute(string id)
         {
-            this.ID = messageID;
+            Id = id;
         }
 
-        public UnityMessageAttribute(Enum messageID)
-            : this(Convert.ToInt32(messageID)) { }
+        public UnityMessageAttribute(string id, Enum type) : this(id)
+        {
+            Type = type;
+        }
 
-        public int ID { get; }
+        public string Id { get; }
+
+        public Enum Type { get; }
     }
 }

@@ -8,7 +8,7 @@ using BuildResult = UnityEditor.Build.Reporting.BuildResult;
 
 public static class Build
 {
-    public static BuildTargetGroup? CurrentGroup = null;
+    public static BuildTargetGroup? CurrentGroup { get; private set; } = null;
 
     static readonly string[] whitelistedItems = new string[]
     {

@@ -5,16 +5,14 @@ namespace ReactNative
     /// <summary>
     /// Describes unity message entity.
     /// </summary>
-    public interface IUnityMessage
-    {
-        int Type();
-    }
+    public interface IUnityMessage { }
 
     /// <summary>
     /// Describes unity message entity.
     /// </summary>
-    public interface IUnityMessage<T> where T : Enum
+    public interface IUnityMessage<TType> : IUnityMessage
+        where TType : Enum
     {
-        T Type();
+        TType Type();
     }
 }

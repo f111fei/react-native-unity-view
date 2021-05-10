@@ -112,20 +112,21 @@ namespace ReactNative
         /// Sends message with data.
         /// </summary>
         /// <param name="id">The message id (identifying target).</param>
-        /// <param name="data">The message data.</param>
+        /// <param name="message">The message data.</param>
         /// <remarks>
         /// Message format:
         ///  {
         ///    "id": MESSAGE_TARGET_ID, // <paramref name="id" />
-        ///    "type": SERIALIZED_TYPE, // <paramref name="data.Type" />
-        ///    "data": SERIALIZED_DATA, // <paramref name="data" />
+        ///    "type": SERIALIZED_TYPE, // <paramref name="message.Type" />
+        ///    "data": SERIALIZED_DATA, // <paramref name="message" />
         ///  }
         ///  
         /// Raw message is automatically prefixed with <see cref="UnityMessageManager.MessagePrefix" /> 
         /// constant to distinguish it from unformatted messages.
         /// </remarks>
-        public static void Send(string id, IUnityMessage data)
-            => UnityMessageManager.SendPlainInternal(id, data.Type(), data);
+        public static void Send<TMessageType>(string id, IUnityMessage<TMessageType> message)
+            where TMessageType : Enum
+            => UnityMessageManager.SendPlainInternal(id, (int)(object)message.Type(), message);
 
         /// <summary>
         /// Sends message with optional data.
@@ -152,22 +153,23 @@ namespace ReactNative
         /// </summary>
         /// <param name="id">The message id (identifying target).</param>
         /// <param name="type">The request type (to identify response).</param>
-        /// <param name="data">The data attached to the message.</param>
+        /// <param name="request">The data attached to the message.</param>
         /// <returns>Response message from the target.</returns>
         /// <remarks>
         /// Message format:
         ///  {
         ///    "id": MESSAGE_TARGET_ID, // <paramref name="id" />
-        ///    "type": SERIALIZED_TYPE, // <paramref name="data.Type" />
-        ///    "data": SERIALIZED_DATA, // <paramref name="data" />
+        ///    "type": SERIALIZED_TYPE, // <paramref name="request.Type" />
+        ///    "data": SERIALIZED_DATA, // <paramref name="request" />
         ///    "uuid": UNIQUE_REQUEST_IDENTIFIER // Exists only when <paramref name="onResponse" /> callback is provided
         ///  }
         ///  
         /// Message is automatically prefixed with <see cref="UnityMessageManager.MessagePrefix" /> 
         /// constant to distinguish it from unformatted messages.
         /// </remarks>
-        public static Task<UnityMessage> SendAsync(string id, IUnityRequest data, CancellationToken cancellationToken = default(CancellationToken))
-            => UnityMessageManager.instance?.SendRequestAsync<UnityMessage>(id, data.Type(), data, cancellationToken);
+        public static Task<UnityMessage> SendAsync<TMessageType>(string id, IUnityRequest<TMessageType> request, CancellationToken cancellationToken = default(CancellationToken))
+            where TMessageType : Enum
+            => UnityMessageManager.instance?.SendRequestAsync<UnityMessage>(id, (int)(object)request.Type(), request, cancellationToken);
 
         /// <summary>
         /// Sends request message with optional data.
@@ -195,22 +197,23 @@ namespace ReactNative
         /// Sends request message with optional data.
         /// </summary>
         /// <param name="id">The message id (identifying target).</param>
-        /// <param name="data">The data attached to the message.</param>
+        /// <param name="request">The data attached to the message.</param>
         /// <returns>Response message from the target.</returns>
         /// <remarks>
         /// Message format:
         ///  {
         ///    "id": MESSAGE_TARGET_ID, // <paramref name="id" />
-        ///    "type": SERIALIZED_TYPE, // <paramref name="data.Type" />
-        ///    "data": SERIALIZED_DATA, // <paramref name="data" />
+        ///    "type": SERIALIZED_TYPE, // <paramref name="request.Type" />
+        ///    "data": SERIALIZED_DATA, // <paramref name="request" />
         ///    "uuid": UNIQUE_REQUEST_IDENTIFIER // Exists only when <paramref name="onResponse" /> callback is provided
         ///  }
         ///  
         /// Message is automatically prefixed with <see cref="UnityMessageManager.MessagePrefix" /> 
         /// constant to distinguish it from unformatted messages.
         /// </remarks>
-        public static Task<T> SendAsync<T>(string id, IUnityRequest data, CancellationToken cancellationToken = default(CancellationToken))
-            => UnityMessageManager.instance?.SendRequestAsync<T>(id, data.Type(), data, cancellationToken);
+        public static Task<TResponse> SendAsync<TMessageType, TResponse>(string id, IUnityRequest<TMessageType> request, CancellationToken cancellationToken = default(CancellationToken))
+            where TMessageType : Enum
+            => UnityMessageManager.instance?.SendRequestAsync<TResponse>(id, (int)(object)request.Type(), request, cancellationToken);
 
         /// <summary>
         /// Sends request message with optional data.
@@ -257,10 +260,12 @@ namespace ReactNative
             this.onRNMessage(MessagePrefix + json);
         }
 
-        public static Task<T> InjectAsync<T>(string id, IUnityRequest data, CancellationToken cancellationToken = default(CancellationToken))
-            => UnityMessageManager.instance?.InjectInternalAsync<T>(id, GetNextUUID(), data.Type(), data, cancellationToken);
-        public static Task<T> InjectAsync<T>(string id, IUnityRequest<T> data, CancellationToken cancellationToken = default(CancellationToken))
-            => UnityMessageManager.instance?.InjectInternalAsync<T>(id, GetNextUUID(), data.Type(), data, cancellationToken);
+        public static Task InjectAsync<TMessageType>(string id, IUnityRequest<TMessageType> data, CancellationToken cancellationToken = default(CancellationToken))
+            where TMessageType : Enum
+            => UnityMessageManager.instance?.InjectInternalAsync<object>(id, GetNextUUID(), (int)(object)data.Type(), data, cancellationToken);
+        public static Task<TResponse> InjectAsync<TRequestType, TResponse>(string id, IUnityRequest<TRequestType, TResponse> data, CancellationToken cancellationToken = default(CancellationToken))
+            where TRequestType : Enum
+            => UnityMessageManager.instance?.InjectInternalAsync<TResponse>(id, GetNextUUID(), (int)(object)data.Type(), data, cancellationToken);
         public static Task<T> InjectAsync<T>(string id, int type, object data = null, CancellationToken cancellationToken = default(CancellationToken))
             => UnityMessageManager.instance?.InjectInternalAsync<T>(id, GetNextUUID(), type, data, cancellationToken);
         private async Task<T> InjectInternalAsync<T>(string id, int uuid, int type, object data, CancellationToken cancellationToken)

@@ -6,8 +6,6 @@ namespace ReactNative
 {
     public interface IUnityMessageHandler
     {
-        #region Properties
-
         /// <summary>
         /// The received message.
         /// </summary>
@@ -28,9 +26,6 @@ namespace ReactNative
         /// </summary>
         CancellationToken CancellationToken { get; }
 
-        #endregion
-
-        #region Public methods
 
         /// <summary>
         /// Get deferral for processing the incomming message on another thread.
@@ -67,11 +62,5 @@ namespace ReactNative
             [CallerMemberName] string memberName = "",
             [CallerFilePath] string sourceFilePath = "",
             [CallerLineNumber] int sourceLineNumber = 0);
-
-        #endregion
-    }
-
-    public interface IUnityMessageHandler<in TResponse> : IUnityMessageHandler
-    {
     }
 }

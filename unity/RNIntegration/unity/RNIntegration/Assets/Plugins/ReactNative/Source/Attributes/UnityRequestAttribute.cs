@@ -2,17 +2,21 @@
 
 namespace ReactNative
 {
-    public sealed class UnityRequestAttribute : UnityMessageAttribute
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = true)]
+    public sealed class UnityRequestAttribute : Attribute
     {
-        public UnityRequestAttribute(int requestID, Type responseType)
-            : base(requestID)
+        public UnityRequestAttribute(string id)
         {
-            this.ResponseType = responseType;
+            Id = id;
         }
 
-        public UnityRequestAttribute(Enum requestType, Type responseType)
-            : this(Convert.ToInt32(requestType), responseType) { }
+        public UnityRequestAttribute(string id, Enum type) : this(id)
+        {
+            Type = type;
+        }
 
-        public Type ResponseType { get; }
+        public string Id { get; }
+
+        public Enum Type { get; }
     }
 }

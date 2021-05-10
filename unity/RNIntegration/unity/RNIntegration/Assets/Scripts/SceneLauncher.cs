@@ -3,31 +3,34 @@ using ReactNative;
 using System;
 using UnityEngine;
 
+[UnityMessageHandler(MessageID)]
 public class SceneLauncher : MonoBehaviour
 {
+    public const string MessageID = "launcher";
+
     private IDisposable subscription;
     private Color backgroundColor = Color.grey;
 
     void Awake()
     {
-        UnityMessageManager.Send("launcher", new JObject { { "state", "awake" } });
+        UnityMessageManager.Send(MessageID, new JObject { { "state", "awake" } });
     }
 
     void OnEnable()
     {
         UnityMessageManager.OnMessage += this.OnReceiveMessage;
         this.subscription = UnityMessageManager.Subscribe("launcher", this.OnReceiveMessage);
-        UnityMessageManager.Send("launcher", new JObject { { "state", "enable" } });
+        UnityMessageManager.Send(MessageID, new JObject { { "state", "enable" } });
     }
 
     void Start()
     {
-        UnityMessageManager.Send("launcher", new JObject { { "state", "start" } });
+        UnityMessageManager.Send(MessageID, new JObject { { "state", "start" } });
     }
 
     void OnDisable()
     {
-        UnityMessageManager.Send("launcher", new JObject { { "state", "disable" } });
+        UnityMessageManager.Send(MessageID, new JObject { { "state", "disable" } });
         UnityMessageManager.OnMessage -= this.OnReceiveMessage;
         this.subscription?.Dispose();
         this.subscription = null;

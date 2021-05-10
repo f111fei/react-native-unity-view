@@ -1,9 +1,9 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
 
 namespace ReactNative
 {
     /// <summary>
     /// Describes unity response entity.
     /// </summary>
-    public interface IUnityResponse { }
+    public interface IUnityResponse : IUnityMessage { }
 }

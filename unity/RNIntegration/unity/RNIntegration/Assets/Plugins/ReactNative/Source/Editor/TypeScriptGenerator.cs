@@ -49,8 +49,10 @@ public static class TypeScriptGenerator
         context.Global.UseModules = true;
         context.Global.ExportPureTypings = false;
         context.Global.UnresolvedToUnknown = false;
+        context.Global.GenerateDocumentation = true;
+        context.Global.AutoOptionalProperties = true;
 
-        new Reinforced.Typings.TsExporter(context).Export();
+        new TsExporter(context).Export();
     }
 
     public static void Configure(ConfigurationBuilder builder)
@@ -168,7 +170,8 @@ public static class TypeScriptGenerator
             {
                 b.AutoI(false);
                 b.WithFields(
-                    GetExportableFields(b.Type));
+                    GetExportableFields(b.Type)
+                    .Where(m => !m.Name.StartsWith("k")));
 
                 if (b.Type != typeof(Quaternion))
                 {
@@ -355,27 +358,45 @@ public static class TypeScriptGenerator
             return;
         }
 
-        ConfigureMember(builder.Member.FieldType, builder);
+        ConfigureMember(builder.Member.FieldType, builder, isLiteral: builder.Member.IsLiteral);
     }
 
-    public static void ConfigureMember(Type memberType, PropertyExportBuilder builder)
+    public static void ConfigureMember(Type memberType, PropertyExportBuilder builder, bool isLiteral = false)
     {
         if (memberType.IsGenericType && memberType.GetGenericTypeDefinition() == typeof(Nullable<>))
         {
             builder.ForceNullable(true);
-            ConfigureMemberType(memberType.GenericTypeArguments[0], builder);
+            ConfigureMemberType(memberType.GenericTypeArguments[0], builder, isLiteral);
         }
         else
         {
-            ConfigureMemberType(memberType, builder);
+            ConfigureMemberType(memberType, builder, isLiteral);
         }
     }
 
-    public static void ConfigureMemberType(Type memberType, MemberExportBuilder builder)
+    public static void ConfigureMemberType(Type memberType, MemberExportBuilder builder, bool isLiteral = false)
     {
-        if (memberType == typeof(Guid))
+        if (isLiteral)
         {
-            builder.Type("string");
+            if (memberType.IsPrimitive)
+            {
+                builder.Type($"{((FieldInfo)builder._member).GetRawConstantValue().ToString().ToLowerInvariant()}");
+            }
+            else
+            {
+                builder.Type($"'{((FieldInfo)builder._member).GetRawConstantValue()}'");
+            }
+        }
+        else if (memberType == typeof(Guid))
+        {
+            if (isLiteral)
+            {
+                builder.Type($"'{((FieldInfo)builder._member).GetRawConstantValue()}'");
+            }
+            else
+            {
+                builder.Type("string");
+            }
         }
         else if (typeof(IEnumerable<Guid>).IsAssignableFrom(memberType))
         {
@@ -383,7 +404,14 @@ public static class TypeScriptGenerator
         }
         else if (memberType == typeof(Uri))
         {
-            builder.Type("string");
+            if (isLiteral)
+            {
+                builder.Type($"'{((FieldInfo)builder._member).GetRawConstantValue()}'");
+            }
+            else
+            {
+                builder.Type("string");
+            }
         }
         else if (typeof(IEnumerable<Uri>).IsAssignableFrom(memberType))
         {
@@ -466,7 +494,7 @@ public static class TypeScriptGenerator
             .Where(m => m.GetType().Name.IndexOf("ignore", StringComparison.InvariantCultureIgnoreCase) < 0);
 
     private static IEnumerable<FieldInfo> GetExportableFields(Type t)
-        => t.GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy)
+        => t.GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.Static)
             .Where(m => m.GetType().Name.IndexOf("ignore", StringComparison.InvariantCultureIgnoreCase) < 0);
 
     private static IEnumerable<MemberInfo> GetExportableMembers(Type t)

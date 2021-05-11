@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
+using System.Xml.Serialization;
 using UnityEngine.Scripting;
 
 namespace ReactNative
@@ -40,36 +41,43 @@ namespace ReactNative
         /// <summary>
         /// Gets a boolean flag indicating whether this is a simple message (no response expected).
         /// </summary>
+        [XmlIgnore]
         public bool IsSimple => !this.uuid.HasValue || this.type == (int)UnityMessageType.Default;
 
         /// <summary>
         /// Gets a boolean flag indicating whether this is a request message.
         /// </summary>
+        [XmlIgnore]
         public bool IsRequest => this.uuid.HasValue && this.type >= (int)UnityMessageType.Request;
 
         /// <summary>
         /// Gets a boolean flag indicating whether this is a response, cancel or error message.
         /// </summary>
+        [XmlIgnore]
         public bool IsRequestCompletion => this.uuid.HasValue && (this.type == (int)UnityMessageType.Response || this.type == (int)UnityMessageType.Error || this.type == (int)UnityMessageType.Canceled);
 
         /// <summary>
         /// Gets a boolean flag indicating whether this is a response message.
         /// </summary>
+        [XmlIgnore]
         public bool IsResponse => this.uuid.HasValue && this.type == (int)UnityMessageType.Response;
 
         /// <summary>
         /// Gets a boolean flag indicating whether this is an error message.
         /// </summary>
+        [XmlIgnore]
         public bool IsError => this.uuid.HasValue && this.type == (int)UnityMessageType.Error;
 
         /// <summary>
         /// Gets a boolean flag indicating whether this is a cancellation request.
         /// </summary>
+        [XmlIgnore]
         public bool IsCancel => this.uuid.HasValue && this.type == (int)UnityMessageType.Cancel;
 
         /// <summary>
         /// Gets a boolean flag indicating whether this is a cancellation notification.
         /// </summary>
+        [XmlIgnore]
         public bool IsCanceled => this.uuid.HasValue && this.type == (int)UnityMessageType.Canceled;
 
 
@@ -95,6 +103,7 @@ namespace ReactNative
         /// <typeparam name="T">The type to use for conversion.</typeparam>
         /// <param name="result">Result of the conversion</param>
         /// <returns>Boolean flag indicating whether conversion was successfull.</returns>
+        [Obsolete("This method has been deprecated and may be removed in the future.")]
         public bool TryGetData<T>(out T result)
         {
             if (this.data != null)
@@ -106,7 +115,7 @@ namespace ReactNative
                 }
                 catch (Exception e)
                 {
-                    UnityEngine.Debug.unityLogger.LogError("messaging", e);
+                    UnityEngine.Debug.unityLogger.LogException(e);
                 }
             }
 

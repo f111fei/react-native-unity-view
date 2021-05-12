@@ -56,7 +56,7 @@ export interface UnityModule {
      * @param gameObject (optional) The Name of GameObject. Also can be a path string.
      * @param methodName (optional) Method name in GameObject instance.
      */
-    postMessageAsync<TResponse = any, TType extends number = UnityMessageType>(request: IUnityRequest<TType, TResponse>, gameObject?: string, methodName?: string): Observable<TResponse>;
+    postMessageAsync<TResponse = any, TType extends number = UnityMessageType, TData = any>(request: IUnityRequest<TType, TData, TResponse>, gameObject?: string, methodName?: string): Observable<TResponse>;
     /**
      * Send Message to UnityMessageManager.
      * @param id The request target ID to post.
@@ -188,7 +188,7 @@ class UnityModuleImpl implements UnityModule {
      * @param gameObject (optional) The Name of GameObject. Also can be a path string.
      * @param methodName (optional) Method name in GameObject instance.
      */
-    public postMessageAsync<TResponse = any, TType extends number = UnityMessageType>(request: IUnityRequest<TType, TResponse>, gameObject?: string, methodName?: string): Observable<TResponse>;
+    public postMessageAsync<TResponse = any, TType extends number = UnityMessageType, TData = any>(request: IUnityRequest<TType, TData, TResponse>, gameObject?: string, methodName?: string): Observable<TResponse>;
     /**
      * Send Message to UnityMessageManager.
      * @param id The request target ID to post.
@@ -206,7 +206,7 @@ class UnityModuleImpl implements UnityModule {
     * @param methodName (optional) Method name in GameObject instance.
     */
     public postMessageAsync<TResponse = any, TType extends number = UnityMessageType>(id: string, type: TType, data: any, gameObject?: string, methodName?: string): Observable<TResponse>;
-    public postMessageAsync<TResponse = any, TType extends number = UnityMessageType>(first: string | IUnityRequest<TType, TResponse>, second: any, third: any, fourth?: string, fifth?: string): Observable<TResponse> {
+    public postMessageAsync<TResponse = any, TType extends number = UnityMessageType, TData = any>(first: string | IUnityRequest<TType, TData, TResponse>, second: any, third: any, fourth?: string, fifth?: string): Observable<TResponse> {
         var id: string;
         var type: number;
         var data: any;

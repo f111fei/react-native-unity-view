@@ -15,7 +15,7 @@ using UnityEngine;
 
 namespace ReactNative
 {
-    public interface IUnityRequest<TType, TResponse, TData> { }
+    public interface IUnityRequest<TType, TData, TResponse> { }
 }
 
 public static class TypeScriptGenerator
@@ -133,7 +133,7 @@ public static class TypeScriptGenerator
                 var tType = i.GenericTypeArguments.Skip(0).FirstOrDefault() ?? typeof(int);
                 var tResponse = i.GenericTypeArguments.Skip(1).FirstOrDefault() ?? typeof(object);
                 var tData = i.GenericTypeArguments.Skip(2).FirstOrDefault() ?? requestDataType;
-                var tInterface = typeof(IUnityRequest<,,>).MakeGenericType(tType, tResponse, tData);
+                var tInterface = typeof(IUnityRequest<,,>).MakeGenericType(tType, tData, tResponse);
                 b.Attr.Implementees.Add(tInterface);
             }
             else if (IsUnityRequestType(b.Type))

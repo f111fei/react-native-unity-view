@@ -41,7 +41,8 @@ public static class Build
             EditorUserBuildSettings.exportAsGoogleAndroidProject = true;
 
             string oldScriptingDefines = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.Android);
-            PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Android, oldScriptingDefines + ";UNITY_EXPORT");
+            string newScriptingDefines = ProcessDefines(oldScriptingDefines);
+            PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Android, newScriptingDefines);
 
             try
             {
@@ -147,7 +148,8 @@ public static class Build
             EditorUserBuildSettings.iOSBuildConfigType = iOSBuildType.Release;
 
             string oldScriptingDefines = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.iOS);
-            PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.iOS, oldScriptingDefines + ";UNITY_EXPORT");
+            string newScriptingDefines = ProcessDefines(oldScriptingDefines);
+            PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.iOS, newScriptingDefines);
 
             try
             {
@@ -193,7 +195,8 @@ public static class Build
             // EditorUserBuildSettings.SetWSADotNetNative(WSABuildType.Master, false);
 
             string oldScriptingDefines = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.WSA);
-            PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.WSA, oldScriptingDefines + ";UNITY_EXPORT");
+            string newScriptingDefines = ProcessDefines(oldScriptingDefines);
+            PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.WSA, newScriptingDefines);
 
             try
             {
@@ -313,5 +316,11 @@ public static class Build
                 Directory.Delete(dir, true);
             }
         }
+    }
+
+    private static string ProcessDefines(string defines)
+    {
+        defines = Regex.Replace(defines, ";?UNITY_STANDALONE;?", ";");
+        return $"{defines};UNITY_EXPORT";
     }
 }

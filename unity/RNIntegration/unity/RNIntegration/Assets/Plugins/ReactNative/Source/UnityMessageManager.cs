@@ -1,11 +1,11 @@
-﻿#define DEBUG_MESSAGING
+﻿// #define DEBUG_MESSAGING
 
+using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Scripting;
 
@@ -42,7 +42,7 @@ namespace ReactNative
 
         private readonly object stateLock = new object();
         private readonly Dictionary<string, Subscription[]> subscriptions = new Dictionary<string, Subscription[]>();
-        private readonly Dictionary<int, TaskCompletionSource<UnityMessage>> sentRequests = new Dictionary<int, TaskCompletionSource<UnityMessage>>();
+        private readonly Dictionary<int, UniTaskCompletionSource<UnityMessage>> sentRequests = new Dictionary<int, UniTaskCompletionSource<UnityMessage>>();
         private readonly Dictionary<int, UnityMessageHandlerImpl> receivedRequests = new Dictionary<int, UnityMessageHandlerImpl>();
 
         #endregion
@@ -167,9 +167,9 @@ namespace ReactNative
         /// Message is automatically prefixed with <see cref="UnityMessageManager.MessagePrefix" /> 
         /// constant to distinguish it from unformatted messages.
         /// </remarks>
-        public static Task<UnityMessage> SendAsync<TMessageType>(string id, IUnityRequest<TMessageType> request, CancellationToken cancellationToken = default(CancellationToken))
+        public static async UniTask<UnityMessage> SendAsync<TMessageType>(string id, IUnityRequest<TMessageType> request, CancellationToken cancellationToken = default(CancellationToken))
             where TMessageType : Enum
-            => UnityMessageManager.instance?.SendRequestAsync<UnityMessage>(id, (int)(object)request.Type(), request, cancellationToken);
+            => await UnityMessageManager.instance.SendRequestAsync<UnityMessage>(id, (int)(object)request.Type(), request, cancellationToken);
 
         /// <summary>
         /// Sends request message with optional data.
@@ -190,8 +190,8 @@ namespace ReactNative
         /// Message is automatically prefixed with <see cref="UnityMessageManager.MessagePrefix" /> 
         /// constant to distinguish it from unformatted messages.
         /// </remarks>
-        public static Task<UnityMessage> SendAsync(string id, int type, object data = null, CancellationToken cancellationToken = default(CancellationToken))
-            => UnityMessageManager.instance?.SendRequestAsync<UnityMessage>(id, type, data, cancellationToken);
+        public static async UniTask<UnityMessage> SendAsync(string id, int type, object data = null, CancellationToken cancellationToken = default(CancellationToken))
+            => await UnityMessageManager.instance.SendRequestAsync<UnityMessage>(id, type, data, cancellationToken);
 
         /// <summary>
         /// Sends request message with optional data.
@@ -211,9 +211,9 @@ namespace ReactNative
         /// Message is automatically prefixed with <see cref="UnityMessageManager.MessagePrefix" /> 
         /// constant to distinguish it from unformatted messages.
         /// </remarks>
-        public static Task<TResponse> SendAsync<TMessageType, TResponse>(string id, IUnityRequest<TMessageType> request, CancellationToken cancellationToken = default(CancellationToken))
+        public static async UniTask<TResponse> SendAsync<TMessageType, TResponse>(string id, IUnityRequest<TMessageType> request, CancellationToken cancellationToken = default(CancellationToken))
             where TMessageType : Enum
-            => UnityMessageManager.instance?.SendRequestAsync<TResponse>(id, (int)(object)request.Type(), request, cancellationToken);
+            => await UnityMessageManager.instance.SendRequestAsync<TResponse>(id, (int)(object)request.Type(), request, cancellationToken);
 
         /// <summary>
         /// Sends request message with optional data.
@@ -234,8 +234,8 @@ namespace ReactNative
         /// Message is automatically prefixed with <see cref="UnityMessageManager.MessagePrefix" /> 
         /// constant to distinguish it from unformatted messages.
         /// </remarks>
-        public static Task<T> SendAsync<T>(string id, int type, object data = null, CancellationToken cancellationToken = default(CancellationToken))
-            => UnityMessageManager.instance?.SendRequestAsync<T>(id, type, data, cancellationToken);
+        public static async UniTask<T> SendAsync<T>(string id, int type, object data = null, CancellationToken cancellationToken = default(CancellationToken))
+            => await UnityMessageManager.instance.SendRequestAsync<T>(id, type, data, cancellationToken);
 
         /// <summary>
         /// Subscribes a new message handler to listen for a given message id.
@@ -260,50 +260,47 @@ namespace ReactNative
             this.onRNMessage(MessagePrefix + json);
         }
 
-        public static Task InjectAsync<TMessageType>(string id, IUnityRequest<TMessageType> data, CancellationToken cancellationToken = default(CancellationToken))
+        public static UniTask InjectAsync<TMessageType>(string id, IUnityRequest<TMessageType> data, CancellationToken cancellationToken = default(CancellationToken))
             where TMessageType : Enum
-            => UnityMessageManager.instance?.InjectInternalAsync<object>(id, GetNextUUID(), (int)(object)data.Type(), data, cancellationToken);
-        public static Task<TResponse> InjectAsync<TRequestType, TResponse>(string id, IUnityRequest<TRequestType, TResponse> data, CancellationToken cancellationToken = default(CancellationToken))
+            => UnityMessageManager.instance.InjectInternalAsync<object>(id, GetNextUUID(), (int)(object)data.Type(), data, cancellationToken);
+        public static UniTask<TResponse> InjectAsync<TRequestType, TResponse>(string id, IUnityRequest<TRequestType, TResponse> data, CancellationToken cancellationToken = default(CancellationToken))
             where TRequestType : Enum
-            => UnityMessageManager.instance?.InjectInternalAsync<TResponse>(id, GetNextUUID(), (int)(object)data.Type(), data, cancellationToken);
-        public static Task<T> InjectAsync<T>(string id, int type, object data = null, CancellationToken cancellationToken = default(CancellationToken))
-            => UnityMessageManager.instance?.InjectInternalAsync<T>(id, GetNextUUID(), type, data, cancellationToken);
-        private async Task<T> InjectInternalAsync<T>(string id, int uuid, int type, object data, CancellationToken cancellationToken)
+            => UnityMessageManager.instance.InjectInternalAsync<TResponse>(id, GetNextUUID(), (int)(object)data.Type(), data, cancellationToken);
+        public static UniTask<T> InjectAsync<T>(string id, int type, object data = null, CancellationToken cancellationToken = default(CancellationToken))
+            => UnityMessageManager.instance.InjectInternalAsync<T>(id, GetNextUUID(), type, data, cancellationToken);
+        private async UniTask<T> InjectInternalAsync<T>(string id, int uuid, int type, object data, CancellationToken cancellationToken)
         {
-            return await Task.Run(async () =>
+            cancellationToken.ThrowIfCancellationRequested();
+            var awaiter = new UniTaskCompletionSource<UnityMessage>();
+            string json = UnityMessageManager.SerializeRequest(id, uuid, type, data);
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            try
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                var awaiter = new TaskCompletionSource<UnityMessage>();
-                string json = UnityMessageManager.SerializeRequest(id, uuid, type, data);
+                this.AddOutboundRequest(uuid, awaiter);
+                SendRequestInternal(id, uuid, type, data); // Note: This will only print message to Unity Console
 
-                cancellationToken.ThrowIfCancellationRequested();
-
-                try
+                UnityMessage unityMessage;
+                using (cancellationToken.Register(() => SendCancel(id, uuid)))
                 {
-                    this.AddOutboundRequest(uuid, awaiter);
-                    SendRequestInternal(id, uuid, type, data); // Note: This will only print message to Unity Console
-
-                    UnityMessage unityMessage;
-                    using (cancellationToken.Register(() => SendCancel(id, uuid)))
-                    {
-                        this.onRNMessage(MessagePrefix + json);
-                        unityMessage = await awaiter.Task.ConfigureAwait(false);
-                    }
-
-                    if (typeof(T) == typeof(UnityMessage))
-                    {
-                        return (T)Convert.ChangeType(unityMessage, typeof(UnityMessage));
-                    }
-                    else
-                    {
-                        return unityMessage.GetData<T>();
-                    }
+                    this.onRNMessage(MessagePrefix + json);
+                    unityMessage = await awaiter.Task;
                 }
-                finally
+
+                if (typeof(T) == typeof(UnityMessage))
                 {
-                    this.RemoveOutboundRequest(uuid);
+                    return (T)Convert.ChangeType(unityMessage, typeof(UnityMessage));
                 }
-            }, cancellationToken);
+                else
+                {
+                    return unityMessage.GetData<T>();
+                }
+            }
+            finally
+            {
+                this.RemoveOutboundRequest(uuid);
+            }
         }
 #endif
         #endregion
@@ -320,12 +317,12 @@ namespace ReactNative
 
         #region Private methods
 
-        private async Task<T> SendRequestAsync<T>(string id, int type, object data, CancellationToken cancellationToken)
+        private async UniTask<T> SendRequestAsync<T>(string id, int type, object data, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             int uuid = GetNextUUID();
-            var awaiter = new TaskCompletionSource<UnityMessage>();
+            var awaiter = new UniTaskCompletionSource<UnityMessage>();
 
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -343,7 +340,7 @@ namespace ReactNative
                                                       }
                                                   }))
                 {
-                    unityMessage = await awaiter.Task.ConfigureAwait(false);
+                    unityMessage = await awaiter.Task;
                 }
 
                 if (typeof(T) == typeof(UnityMessage))
@@ -551,7 +548,7 @@ namespace ReactNative
             }
         }
 
-        private void AddOutboundRequest(int uuid, TaskCompletionSource<UnityMessage> awaiter)
+        private void AddOutboundRequest(int uuid, UniTaskCompletionSource<UnityMessage> awaiter)
         {
             lock (this.stateLock)
             {
@@ -567,7 +564,7 @@ namespace ReactNative
             }
         }
 
-        private bool RemoveOutboundRequest(int uuid, out TaskCompletionSource<UnityMessage> awaiter)
+        private bool RemoveOutboundRequest(int uuid, out UniTaskCompletionSource<UnityMessage> awaiter)
         {
             lock (this.stateLock)
             {
@@ -591,7 +588,7 @@ namespace ReactNative
             lock (this.stateLock)
             {
                 // Response (success or failure) to sent request
-                if (this.RemoveOutboundRequest(uuid, out TaskCompletionSource<UnityMessage> awaiter))
+                if (this.RemoveOutboundRequest(uuid, out UniTaskCompletionSource<UnityMessage> awaiter))
                 {
                     if (unityMessage.IsResponse)
                     {

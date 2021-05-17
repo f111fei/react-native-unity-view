@@ -14,16 +14,20 @@ namespace Reinforced.Typings.Visitors.TypeScript
             {
                 Context = WriterContext.Module;
                 AppendTabs();
-                if (node.GenerationMode == NamespaceGenerationMode.Module)
+                foreach (var ns in node.Name.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries))
                 {
-                    WriteLine(String.Format("module {0} {{", node.Name));
+                    AppendTabs();
+                    if (node.GenerationMode == NamespaceGenerationMode.Module)
+                    {
+                        WriteLine(String.Format("module {0} {{", ns));
+                    }
+                    else
+                    {
+                        if (node.Export) Write("export ");
+                        WriteLine(String.Format("namespace {0} {{", ns));
+                    }
+                    Tab();
                 }
-                else
-                {
-                    if (node.Export) Write("export ");
-                    WriteLine(String.Format("namespace {0} {{", node.Name));
-                }
-                Tab();
             }
             foreach (var rtCompilationUnit in node.CompilationUnits.OrderBy(c => c is RtCompilationUnit ? ((RtCompilationUnit) c).Order : 0))
             {
@@ -31,10 +35,13 @@ namespace Reinforced.Typings.Visitors.TypeScript
             }
             if (!node.IsAmbientNamespace)
             {
-                Context = WriterContext.None;
-                UnTab();
-                AppendTabs();
-                WriteLine("}");
+                foreach (var ns in node.Name.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    Context = WriterContext.None;
+                    UnTab();
+                    AppendTabs();
+                    WriteLine("}");
+                }
             }
         }
     }

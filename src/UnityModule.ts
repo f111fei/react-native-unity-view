@@ -251,6 +251,11 @@ class UnityModuleImpl implements UnityModule {
                 id: id,
                 onNext: (response: UnityMessage) => {
                     var data = response.data as TResponse;
+
+                    if(__DEBUG_UNITY_VIEW__) {
+                        console.log(`RESPONSE ${uuid}: ${JSON.stringify(data)}`);
+                    }
+
                     subscriber.next(data);
                 },
                 onError: (response: UnityMessage) => {
@@ -278,6 +283,14 @@ class UnityModuleImpl implements UnityModule {
                 uuid: uuid,
                 data: data
             }));
+
+            if(__DEBUG_UNITY_VIEW__) {
+                console.log(`REQUEST ${uuid}: ${JSON.stringify({
+                    id: id,
+                    type: type,
+                    data: data
+                })}`);
+            }
 
             // Return cancellation handler
             return () => {
@@ -351,10 +364,6 @@ class UnityModuleImpl implements UnityModule {
 
     private handleMessage(message: string): string | UnityMessageHandler | undefined {
         if (UnityMessageImpl.isUnityMessage(message)) {
-            if (__DEBUG_UNITY_VIEW__) {
-                console.log(this.prettify(message.substr(UnityMessagePrefix.length)));
-            }
-
             var unityMessage = new UnityMessageImpl(message);
             if (unityMessage.isRequestCompletion()) {
                 // handle callback message
@@ -382,19 +391,28 @@ class UnityModuleImpl implements UnityModule {
                     }
                 }
             } else if (unityMessage.isCancel()) {
+                if (__DEBUG_UNITY_VIEW__) {
+                    console.log(`CANCELED ${unityMessage.uuid}`);
+                }
                 const handler = requestCallbackMessageMap[unityMessage.uuid];
                 if (handler && handler.cancel) {
                     handler.cancel();
                 }
-            } else if (Object.keys(this.unityMessageListeners).length > 0) {
-                const handler = new UnityMessageHandlerImpl(
-                    unityMessage as UnityMessageImpl,
-                    removeRequestCallback);
-                if (handler.isRequest) {
-                    requestCallbackMessageMap[unityMessage.uuid] = handler;
+            } else {
+                if (__DEBUG_UNITY_VIEW__) {
+                    console.log("GENERAL" + JSON.stringify(this.prettify(message.substr(UnityMessagePrefix.length))));
                 }
 
-                return handler;
+                if (Object.keys(this.unityMessageListeners).length > 0) {
+                    const handler = new UnityMessageHandlerImpl(
+                      unityMessage as UnityMessageImpl,
+                      removeRequestCallback);
+                    if (handler.isRequest) {
+                        requestCallbackMessageMap[unityMessage.uuid] = handler;
+                    }
+
+                    return handler;
+                }
             }
         } else {
             if (__DEBUG_UNITY_VIEW__) {
@@ -406,14 +424,6 @@ class UnityModuleImpl implements UnityModule {
     }
 
     private postMessageInternal(gameObject: string, methodName: string, message: string) {
-        if (__DEBUG_UNITY_VIEW__) {
-            if (message.startsWith(UnityMessagePrefix)) {
-                console.log(this.prettify(message.substr(UnityMessagePrefix.length)));
-            } else {
-                console.log('Sent: ', message);
-            }
-        }
-
         UnityNativeModule.postMessage(gameObject, methodName, message);
     };
 

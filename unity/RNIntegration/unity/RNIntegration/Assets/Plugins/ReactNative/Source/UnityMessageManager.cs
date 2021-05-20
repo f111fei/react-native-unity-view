@@ -268,6 +268,8 @@ namespace ReactNative
             => UnityMessageManager.instance.InjectInternalAsync<TResponse>(id, GetNextUUID(), (int)(object)data.Type(), data, cancellationToken);
         public static UniTask<T> InjectAsync<T>(string id, int type, object data = null, CancellationToken cancellationToken = default(CancellationToken))
             => UnityMessageManager.instance.InjectInternalAsync<T>(id, GetNextUUID(), type, data, cancellationToken);
+        public static UniTask<T> InjectAsync<T>(string id, int uuid, int type, object data, CancellationToken cancellationToken)
+            => UnityMessageManager.instance.InjectInternalAsync<T>(id, uuid, type, data, cancellationToken);
         private async UniTask<T> InjectInternalAsync<T>(string id, int uuid, int type, object data, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -278,8 +280,11 @@ namespace ReactNative
 
             try
             {
-                this.AddOutboundRequest(uuid, awaiter);
-                SendRequestInternal(id, uuid, type, data); // Note: This will only print message to Unity Console
+                if (type >= (int)UnityMessageType.Request)
+                {
+                    this.AddOutboundRequest(uuid, awaiter);
+                    SendRequestInternal(id, uuid, type, data); // Note: This will only print message to Unity Console
+                }
 
                 UnityMessage unityMessage;
                 using (cancellationToken.Register(() => SendCancel(id, uuid)))
@@ -625,9 +630,13 @@ namespace ReactNative
             lock (this.stateLock)
             {
                 // Cancellation of received request
-                if (this.RemoveIncommingRequest(uuid, out UnityMessageHandlerImpl handler))
+                if (this.RemoveIncommingRequest(uuid, out UnityMessageHandlerImpl inHandler))
                 {
-                    handler.NotifyCancelled();
+                    inHandler.NotifyCancelled();
+                }
+                else if (this.RemoveOutboundRequest(uuid, out UniTaskCompletionSource<UnityMessage> outHandler))
+                {
+                    outHandler.TrySetCanceled();
                 }
                 else
                 {

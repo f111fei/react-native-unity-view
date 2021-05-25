@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using UniRx;
 using UnityEngine;
 
 namespace ReactNative
@@ -32,7 +33,7 @@ namespace ReactNative
             public IDisposable GetDeferral()
             {
                 this.IsDeferred = true;
-                return this.deferral ?? (this.deferral = new Disposable(() =>
+                return this.deferral ?? (this.deferral = Disposable.Create(() =>
                 {
                     this.deferral = null;
                     this.Dispose();

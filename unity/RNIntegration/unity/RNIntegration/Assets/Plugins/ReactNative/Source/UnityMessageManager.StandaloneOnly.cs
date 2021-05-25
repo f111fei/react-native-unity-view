@@ -1,6 +1,4 @@
-﻿// #define DEBUG_MESSAGING
-
-using Cysharp.Threading.Tasks;
+﻿using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -148,9 +146,7 @@ namespace ReactNative
         {
             if (!message.StartsWith(MessagePrefix))
             {
-#if DEBUG_MESSAGING
                 Debug.unityLogger.Log("messaging", $"Unknown type: {message}");
-#endif
                 return;
             }
 
@@ -159,9 +155,7 @@ namespace ReactNative
             UnityMessage unityMessage = JsonConvert.DeserializeObject<UnityMessage>(message);
             if (unityMessage.IsRequestCompletion)
             {
-#if DEBUG_MESSAGING
-                    Debug.unityLogger.Log("messaging", $"response[{unityMessage.uuid}] {message}");
-#endif
+                Debug.unityLogger.Log("messaging", $"response[{unityMessage.uuid}] {message}");
                 if (instance.sentRequests.ContainsKey(unityMessage.uuid.Value))
                 {
                     instance.TryResolveOutboundRequest(unityMessage);
@@ -173,16 +167,12 @@ namespace ReactNative
             }
             else if (unityMessage.IsCancel)
             {
-#if DEBUG_MESSAGING
                 Debug.unityLogger.Log("messaging", $"cancel[{unityMessage.uuid}] {message}");
-#endif
                 instance.TryCancelRequest(unityMessage);
             }
             else
             {
-#if DEBUG_MESSAGING
                 Debug.unityLogger.Log("messaging", $"request[{unityMessage.uuid}] {message}");
-#endif
                 UnityMessageManager.OnMessageSent?.Invoke(instance, unityMessage);
             }
         }

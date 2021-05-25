@@ -2,7 +2,8 @@
     "name": "ReactNative",
     "rootNamespace": "",
     "references": [
-        "UniTask"
+        "UniTask",
+        "UniRx"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

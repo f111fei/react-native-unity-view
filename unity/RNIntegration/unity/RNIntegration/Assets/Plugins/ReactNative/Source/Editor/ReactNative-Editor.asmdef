@@ -1,10 +1,19 @@
 {
     "name": "ReactNative-Editor",
+    "rootNamespace": "",
     "references": [
-        "ReactNative"
+        "ReactNative",
+        "Unity.XR.ARSubsystems"
     ],
     "includePlatforms": [
         "Editor"
     ],
-    "excludePlatforms": []
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

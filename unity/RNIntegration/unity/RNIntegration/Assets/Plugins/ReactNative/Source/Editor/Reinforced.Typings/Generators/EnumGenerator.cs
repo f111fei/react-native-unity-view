@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.Serialization;
 using Reinforced.Typings.Ast;
 using Reinforced.Typings.Attributes;
 using Reinforced.Typings.Xmldoc.Model;
@@ -66,10 +68,21 @@ namespace Reinforced.Typings.Generators
 
                     if (stringInit)
                     {
-                        if (attr != null && !string.IsNullOrEmpty(attr.Initializer)) value.EnumValue = String.Concat("\"", attr.Initializer, "\"");
+                        if (attr != null && !string.IsNullOrEmpty(attr.Initializer))
+                        {
+                            value.EnumValue = String.Concat("\"", attr.Initializer, "\"");
+                        }
                         else
                         {
-                            value.EnumValue = String.Concat("\"", n, "\"");
+                            var enumMemberAttr = fieldItself.GetCustomAttribute<EnumMemberAttribute>();
+                            if (enumMemberAttr != null && !string.IsNullOrEmpty(enumMemberAttr.Value))
+                            {
+                                value.EnumValue = String.Concat("\"", enumMemberAttr.Value, "\"");
+                            }
+                            else
+                            {
+                                value.EnumValue = String.Concat("\"", n, "\"");
+                            }
                         }
                     }
 

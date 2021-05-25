@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using ReactNative;
 using Reinforced.Typings;
 using Reinforced.Typings.Ast.TypeNames;
@@ -12,6 +13,7 @@ using System.Reflection.Emit;
 using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEngine;
+using UnityEngine.XR.ARSubsystems;
 
 namespace ReactNative
 {
@@ -86,7 +88,12 @@ public static class TypeScriptGenerator
                 });
             });
 
-        builder.ExportAsEnums(allEnums);
+        builder.ExportAsEnums(allEnums, (b) =>
+        {
+            b.Attr.UseString =
+                b.Type.GetCustomAttribute<FlagsAttribute>() == null
+                && b.Type.GetCustomAttribute<UnityMessageTypeAttribute>() == null;
+        });
 
         builder.ExportAsInterfaces(allInterfaces, (b) =>
         {
@@ -164,7 +171,9 @@ public static class TypeScriptGenerator
                 typeof(Vector3Int),
                 typeof(Vector4),
                 typeof(Quaternion),
-                typeof(Matrix4x4)
+                typeof(Matrix4x4),
+                typeof(Pose),
+                typeof(Plane)
             },
             (b) =>
             {
@@ -347,7 +356,7 @@ public static class TypeScriptGenerator
             return;
         }
 
-        ConfigureMember(builder.Member.PropertyType, builder);
+        ConfigureMember(builder.Member.PropertyType, builder, builder.Member);
     }
 
     public static void ConfigureField(FieldExportBuilder builder)
@@ -358,11 +367,25 @@ public static class TypeScriptGenerator
             return;
         }
 
-        ConfigureMember(builder.Member.FieldType, builder, isLiteral: builder.Member.IsLiteral);
+        ConfigureMember(builder.Member.FieldType, builder, builder.Member, isLiteral: builder.Member.IsLiteral);
     }
 
-    public static void ConfigureMember(Type memberType, PropertyExportBuilder builder, bool isLiteral = false)
+    public static void ConfigureMember<TBuilder, TMemberInfo>(Type memberType, TBuilder builder, TMemberInfo memberInfo, bool isLiteral = false)
+        where TBuilder : PropertyExportBuilder
+        where TMemberInfo : MemberInfo
     {
+        if (memberInfo.GetCustomAttribute<JsonIgnoreAttribute>() != null)
+        {
+            builder.Ignore();
+            return;
+        }
+
+        var jsonProperty = memberInfo.GetCustomAttribute<JsonPropertyAttribute>();
+        if (jsonProperty != null && !string.IsNullOrWhiteSpace(jsonProperty.PropertyName))
+        {
+            builder.OverrideName(jsonProperty.PropertyName);
+        }
+
         if (memberType.IsGenericType && memberType.GetGenericTypeDefinition() == typeof(Nullable<>))
         {
             builder.ForceNullable(true);
@@ -387,7 +410,7 @@ public static class TypeScriptGenerator
                 builder.Type($"'{((FieldInfo)builder._member).GetRawConstantValue()}'");
             }
         }
-        else if (memberType == typeof(Guid))
+        else if (memberType == typeof(Guid) || memberType == typeof(TrackableId))
         {
             if (isLiteral)
             {
@@ -483,6 +506,7 @@ public static class TypeScriptGenerator
             typeof(DateTimeOffset),
             typeof(TimeSpan),
             typeof(Guid),
+            typeof(TrackableId),
             typeof(Uri)
         };
 

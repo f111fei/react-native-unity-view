@@ -3,6 +3,7 @@
     /// <summary>
     /// Possible types of the message instance.
     /// </summary>
+    [UnityMessageType]
     public enum UnityMessageType : int
     {
         /// <summary>

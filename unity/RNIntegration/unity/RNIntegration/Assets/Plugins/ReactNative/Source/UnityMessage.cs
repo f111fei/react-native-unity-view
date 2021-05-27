@@ -36,7 +36,7 @@ namespace ReactNative
         /// <summary>
         /// Optional data of the message.
         /// </summary>
-        public JObject data;
+        public JToken data;
 
         /// <summary>
         /// Gets a boolean flag indicating whether this is a simple message (no response expected).

@@ -1,9 +1,6 @@
-import { UnityMessageType } from "./UnityMessage";
+import { IUnityMessage, UnityMessageType } from "./UnityMessage";
 
-export interface IUnityRequest<TType extends number = UnityMessageType, TData = any, TResponse = any> {
-    readonly id: string;
-    readonly type: TType;
-    readonly data?: TData;
+export interface IUnityRequest<TType extends number = UnityMessageType, TData = any, TResponse = any> extends IUnityMessage<TType, TData> {
     processResponse?(response: TResponse): TResponse;
 }
 

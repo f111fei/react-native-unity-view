@@ -17,6 +17,8 @@ using UnityEngine.XR.ARSubsystems;
 
 namespace ReactNative
 {
+    public interface IUnityMessage<TType, TData> { }
+
     public interface IUnityRequest<TType, TData, TResponse> { }
 }
 
@@ -77,13 +79,14 @@ public static class TypeScriptGenerator
         builder.ExportAsThirdParty(
             new[]
             {
+                typeof(IUnityMessage<,>),
                 typeof(IUnityRequest<,,>)
             },
             (c) =>
             {
                 c.Imports(new Reinforced.Typings.Ast.Dependency.RtImport()
                 {
-                    Target = "{ IUnityRequest }",
+                    Target = "{ IUnityRequest, IUnityMessage }",
                     From = "react-native-unity-view"
                 });
             });
@@ -110,20 +113,25 @@ public static class TypeScriptGenerator
                     switch (field.Member.Name)
                     {
                         case "id":
-                            var attr = requestDataType.GetTypeInfo().GetCustomAttribute<UnityRequestAttribute>();
-                            field.Type($"\"{attr.Id}\"");
+                            var attrID = requestDataType.GetTypeInfo().GetCustomAttribute<UnityRequestAttribute>()?.Id
+                                ?? requestDataType.GetTypeInfo().GetCustomAttribute<UnityMessageAttribute>()?.Id;
+                            field.Type($"\"{attrID}\"");
                             break;
 
                         case "type":
-                            var requestInterface = requestDataType.FindInterfaces(IsUnityRequestType, null)[0];
-                            field.InferType((mi, resolver) =>
+                            try
                             {
-                                var requestDataInstance = Activator.CreateInstance(requestDataType);
-                                var typeMethod = requestDataType.GetMethod(nameof(IUnityRequest<Enum>.Type));
-                                var type = typeMethod.Invoke(requestDataInstance, Array.Empty<object>());
-                                var enumType = resolver.ResolveTypeName(requestInterface.GenericTypeArguments[0]) as RtSimpleTypeName;
-                                return new RtSimpleTypeName(enumType.GenericArguments, enumType.Prefix, $"{enumType.TypeName}.{type}");
-                            });
+                                var requestInterface = requestDataType.FindInterfaces(IsUnityMessageType, null).FirstOrDefault();
+                                field.InferType((mi, resolver) =>
+                                {
+                                    var requestDataInstance = Activator.CreateInstance(requestDataType, true);
+                                    var typeMethod = requestDataType.GetMethod(nameof(IUnityMessage<Enum>.Type));
+                                    var type = typeMethod.Invoke(requestDataInstance, Array.Empty<object>());
+                                    var enumType = resolver.ResolveTypeName(requestInterface.GenericTypeArguments[0]) as RtSimpleTypeName;
+                                    return new RtSimpleTypeName(enumType.GenericArguments, enumType.Prefix, $"{enumType.TypeName}.{type}");
+                                });
+                            }
+                            catch { }
                             break;
 
                         case "data":
@@ -136,14 +144,25 @@ public static class TypeScriptGenerator
                     }
                 });
 
-                var i = requestDataType.FindInterfaces(IsUnityRequestType, null).OrderByDescending(m => m.GenericTypeArguments.Length).First();
-                var tType = i.GenericTypeArguments.Skip(0).FirstOrDefault() ?? typeof(int);
-                var tResponse = i.GenericTypeArguments.Skip(1).FirstOrDefault() ?? typeof(object);
-                var tData = i.GenericTypeArguments.Skip(2).FirstOrDefault() ?? requestDataType;
-                var tInterface = typeof(IUnityRequest<,,>).MakeGenericType(tType, tData, tResponse);
-                b.Attr.Implementees.Add(tInterface);
+                if (IsUnityRequestType(requestDataType))
+                {
+                    var i = requestDataType.FindInterfaces(IsUnityRequestType, null).OrderByDescending(m => m.GenericTypeArguments.Length).First();
+                    var tType = i.GenericTypeArguments.Skip(0).FirstOrDefault() ?? typeof(int);
+                    var tResponse = i.GenericTypeArguments.Skip(1).FirstOrDefault() ?? typeof(object);
+                    var tData = i.GenericTypeArguments.Skip(2).FirstOrDefault() ?? requestDataType;
+                    var tInterface = typeof(IUnityRequest<,,>).MakeGenericType(tType, tData, tResponse);
+                    b.Attr.Implementees.Add(tInterface);
+                }
+                else
+                {
+                    var i = requestDataType.FindInterfaces(IsUnityMessageType, null).OrderByDescending(m => m.GenericTypeArguments.Length).First();
+                    var tType = i.GenericTypeArguments.Skip(0).FirstOrDefault() ?? typeof(int);
+                    var tData = i.GenericTypeArguments.Skip(1).FirstOrDefault() ?? requestDataType;
+                    var tInterface = typeof(IUnityMessage<,>).MakeGenericType(tType, tData);
+                    b.Attr.Implementees.Add(tInterface);
+                }
             }
-            else if (IsUnityRequestType(b.Type))
+            else if (IsUnityRequestType(b.Type) || IsUnityMessageType(b.Type))
             {
                 // Request
                 b.Attr.FlattenHierarchy = true;
@@ -208,11 +227,11 @@ public static class TypeScriptGenerator
 
     public static IEnumerable<Type> ExtractUnityMessageInterfaces(Type messageType)
     {
-        if (IsUnityRequestType(messageType))
+        if (IsUnityRequestType(messageType) || IsUnityMessageType(messageType))
         {
             var attr = messageType.GetTypeInfo().GetCustomAttribute<UnityRequestAttribute>();
-            var requestInstance = Activator.CreateInstance(messageType);
-            var typeMethod = messageType.GetMethod(nameof(IUnityRequest<Enum>.Type));
+            var requestInstance = Activator.CreateInstance(messageType, true);
+            var typeMethod = messageType.GetMethod(nameof(IUnityMessage<Enum>.Type));
             var skipRequestData = GetExportableMembers(messageType).Count() == 0;
 
             var interfaceType = messageType.GetInterfaces()
@@ -235,25 +254,6 @@ public static class TypeScriptGenerator
             }
 
             foreach (var requestInterface in messageType.FindInterfaces(IsUnityRequestType, null))
-            {
-                if (!requestInterface.IsGenericType) { continue; }
-
-                if (requestInterface.GenericTypeArguments.Length > 1)
-                {
-                    var responseType = requestInterface.GenericTypeArguments[1];
-
-                    foreach (var t in ExtractTypesFromGeneric(responseType))
-                    {
-                        yield return t;
-                    }
-                }
-            }
-        }
-        else if (IsUnityMessageType(messageType))
-        {
-            yield return messageType;
-
-            foreach (var requestInterface in messageType.FindInterfaces(IsUnityMessageType, null))
             {
                 if (!requestInterface.IsGenericType) { continue; }
 

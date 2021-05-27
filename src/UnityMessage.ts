@@ -9,6 +9,12 @@ export enum UnityMessageType {
 
 export const UnityMessagePrefix = '@UnityMessage@';
 
+export interface IUnityMessage<TType extends number = UnityMessageType, TData = any> {
+    readonly id: string;
+    readonly type: TType;
+    readonly data?: TData;
+}
+
 export interface UnityMessage {
     readonly id: string;
     readonly type: UnityMessageType;

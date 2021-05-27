@@ -1,6 +1,6 @@
 import UnityView from "./UnityView";
 import { UnityModule } from "./UnityModule";
-import { UnityMessage, UnityMessageType } from "./UnityMessage";
+import { UnityMessage, UnityMessageType, IUnityMessage } from "./UnityMessage";
 import { IUnityRequest, UnityRequest } from "./UnityRequest";
 import { UnityMessageHandler } from "./UnityMessageHandler";
 
@@ -13,5 +13,6 @@ export {
     UnityMessageType,
     UnityMessageHandler,
     IUnityRequest,
-    UnityRequest
+    UnityRequest,
+    IUnityMessage
 };

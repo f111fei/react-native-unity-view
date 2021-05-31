@@ -56,38 +56,14 @@ public static class Build
                 if (report.summary.result != BuildResult.Succeeded)
                     throw new Exception("Build failed");
 
-                // Copy build output to UnityExport
-                CopyDirectory(
-                    buildPath,
-                    exportPath,
-                    mergeDirectories: false,
-                    overwriteFiles: true);
-
-                // Copy local.properties
-                CopyFile(
-                    Path.Combine(exportPath, "local.properties"),
-                    Path.Combine(exportPath, "../local.properties"),
-                    overwriteFiles: false);
-
-                // Copy gradle.properties
-                CopyFile(
-                    Path.Combine(exportPath, "gradle.properties"),
-                    Path.Combine(exportPath, "unityLibrary/gradle.properties"),
-                    overwriteFiles: true);
-
-                // Copy some files from 'launcher' project
-                CopyDirectory(
-                    Path.Combine(exportPath, "launcher/src/main/res"),
-                    Path.Combine(exportPath, "unityLibrary/src/main/res"),
-                    mergeDirectories: true,
-                    overwriteFiles: true);
-
                 // Modify build.gradle
                 {
-                    var launcher_build_file = Path.Combine(exportPath, "launcher/build.gradle");
+                    Debug.Log("Patch launcher/build.gradle");
+                    var launcher_build_file = Path.Combine(buildPath, "launcher/build.gradle");
                     var launcher_build_text = File.ReadAllText(launcher_build_file);
 
-                    var build_file = Path.Combine(exportPath, "unityLibrary/build.gradle");
+                    Debug.Log("Patch unityLibrary/build.gradle");
+                    var build_file = Path.Combine(buildPath, "unityLibrary/build.gradle");
                     var build_text = File.ReadAllText(build_file);
                     build_text = build_text.Replace("com.android.application", "com.android.library");
                     build_text = Regex.Replace(build_text, @"\n.*applicationId '.+'.*\n", "\n");
@@ -122,13 +98,45 @@ public static class Build
                 }
 
                 // Modify AndroidManifest.xml
-                var manifest_file = Path.Combine(exportPath, "unityLibrary/src/main/AndroidManifest.xml");
+                Debug.Log("Patch AndroidManifest.xml");
+                var manifest_file = Path.Combine(buildPath, "unityLibrary/src/main/AndroidManifest.xml");
                 var manifest_text = File.ReadAllText(manifest_file);
                 manifest_text = Regex.Replace(manifest_text, @"\s*<uses-sdk[^>]*/>", "");
                 manifest_text = Regex.Replace(manifest_text, @"<application .*>", "<application>");
                 Regex regex = new Regex(@"<activity.*>(\s|\S)+?</activity>", RegexOptions.Multiline);
                 manifest_text = regex.Replace(manifest_text, "");
                 File.WriteAllText(manifest_file, manifest_text);
+
+
+                // Copy build output to UnityExport
+                Debug.Log("Copy to UnityExport");
+                CopyDirectory(
+                    buildPath,
+                    exportPath,
+                    mergeDirectories: false,
+                    overwriteFiles: true);
+
+                // Copy local.properties
+                Debug.Log("Copy local.properties");
+                CopyFile(
+                    Path.Combine(exportPath, "local.properties"),
+                    Path.Combine(exportPath, "../local.properties"),
+                    overwriteFiles: false);
+
+                // Copy gradle.properties
+                Debug.Log("Copy gradle.properties");
+                CopyFile(
+                    Path.Combine(exportPath, "gradle.properties"),
+                    Path.Combine(exportPath, "unityLibrary/gradle.properties"),
+                    overwriteFiles: true);
+
+                // Copy some files from 'launcher' project
+                Debug.Log("Copy resources");
+                CopyDirectory(
+                    Path.Combine(exportPath, "launcher/src/main/res"),
+                    Path.Combine(exportPath, "unityLibrary/src/main/res"),
+                    mergeDirectories: true,
+                    overwriteFiles: true);
             }
             finally
             {

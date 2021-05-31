@@ -56,12 +56,18 @@ public static class Build
                 if (report.summary.result != BuildResult.Succeeded)
                     throw new Exception("Build failed");
 
-                // Copy build output from UnityExport
+                // Copy build output to UnityExport
                 CopyDirectory(
                     buildPath,
                     exportPath,
                     mergeDirectories: false,
                     overwriteFiles: true);
+
+                // Copy local.properties
+                CopyFile(
+                    Path.Combine(exportPath, "local.properties"),
+                    Path.Combine(exportPath, "../local.properties"),
+                    overwriteFiles: false);
 
                 // Copy gradle.properties
                 CopyFile(

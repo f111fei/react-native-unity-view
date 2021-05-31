@@ -125,7 +125,10 @@ public static class Build
             }
             finally
             {
-                PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Android, oldScriptingDefines);
+                if (!Application.isBatchMode)
+                {
+                    PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Android, oldScriptingDefines);
+                }
             }
         }
         finally
@@ -166,7 +169,10 @@ public static class Build
             }
             finally
             {
-                PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.iOS, oldScriptingDefines);
+                if (!Application.isBatchMode)
+                {
+                    PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.iOS, oldScriptingDefines);
+                }
             }
         }
         finally
@@ -213,7 +219,10 @@ public static class Build
             }
             finally
             {
-                PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.WSA, oldScriptingDefines);
+                if (!Application.isBatchMode)
+                {
+                    PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.WSA, oldScriptingDefines);
+                }
             }
         }
         finally

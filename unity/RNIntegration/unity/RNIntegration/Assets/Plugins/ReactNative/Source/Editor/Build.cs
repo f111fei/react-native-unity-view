@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEditor;
+using UnityEngine;
 using Application = UnityEngine.Application;
 using BuildResult = UnityEditor.Build.Reporting.BuildResult;
 
@@ -125,9 +126,15 @@ public static class Build
             }
             finally
             {
+                Debug.Log("Export complete!");
+
                 if (!Application.isBatchMode)
                 {
                     PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Android, oldScriptingDefines);
+                }
+                else
+                {
+                    EditorApplication.Exit(0);
                 }
             }
         }
@@ -169,9 +176,15 @@ public static class Build
             }
             finally
             {
+                Debug.Log("Export complete!");
+
                 if (!Application.isBatchMode)
                 {
                     PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.iOS, oldScriptingDefines);
+                }
+                else
+                {
+                    EditorApplication.Exit(0);
                 }
             }
         }
@@ -219,9 +232,15 @@ public static class Build
             }
             finally
             {
+                Debug.Log("Export complete!");
+
                 if (!Application.isBatchMode)
                 {
                     PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.WSA, oldScriptingDefines);
+                }
+                else
+                {
+                    EditorApplication.Exit(0);
                 }
             }
         }

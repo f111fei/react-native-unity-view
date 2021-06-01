@@ -68,7 +68,7 @@ public static class TypeScriptGenerator
 
         var allInterfaces = allRequests
             .SelectMany(ExtractUnityMessageInterfaces);
-        allInterfaces = allInterfaces.Union(allInterfaces.SelectMany(m => ExtractSameNamespaceTypesFromProperties(m)))
+        allInterfaces = allInterfaces.Union(allInterfaces.SelectMany(m => ExtractInterfaceTypesFromProperties(m)))
             .Where(m => !IsSimpleType(m));
 
         var allEnums = allRequests
@@ -334,16 +334,17 @@ public static class TypeScriptGenerator
             .Where(m => m._IsEnum());
     }
 
-    public static IEnumerable<Type> ExtractSameNamespaceTypesFromProperties(Type t, int level = 0)
+    public static IEnumerable<Type> ExtractInterfaceTypesFromProperties(Type t, int level = 0)
     {
         if (level >= 10) { return Enumerable.Empty<Type>(); }
 
         var result = ExtractTypesFromProperties(t)
             .SelectMany(m => ExtractTypesFromGeneric(m))
             .Where(m => !m._IsEnum())
-            .Where(m => m.Namespace?.Split('.')[0] == t.Namespace?.Split('.')[0]);
+            .Where(m => m.Namespace != nameof(UnityEngine))
+            .Where(m => m.Namespace != nameof(UnityEditor));
 
-        var referenced = result.SelectMany(m => ExtractSameNamespaceTypesFromProperties(m, level + 1));
+        var referenced = result.SelectMany(m => ExtractInterfaceTypesFromProperties(m, level + 1));
 
         return result.Union(referenced);
     }

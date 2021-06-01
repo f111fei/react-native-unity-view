@@ -121,7 +121,7 @@ public static class Build
                 CopyFile(
                     Path.Combine(exportPath, "local.properties"),
                     Path.Combine(exportPath, "../local.properties"),
-                    overwriteFiles: false);
+                    overwriteFiles: true);
 
                 // Copy gradle.properties
                 Debug.Log("Copy gradle.properties");
@@ -138,9 +138,23 @@ public static class Build
                     mergeDirectories: true,
                     overwriteFiles: true);
             }
+            catch (Exception e)
+            {
+                Debug.Log("Export failed!");
+
+                if (Application.isBatchMode)
+                {
+                    Debug.LogError(e);
+                    EditorApplication.Exit(-1);
+                }
+                else
+                {
+                    throw;
+                }
+            }
             finally
             {
-                Debug.Log("Export complete!");
+                Debug.Log("Export completed!");
 
                 if (!Application.isBatchMode)
                 {
@@ -188,9 +202,23 @@ public static class Build
                 if (report.summary.result != BuildResult.Succeeded)
                     throw new Exception("Build failed");
             }
+            catch (Exception e)
+            {
+                Debug.Log("Export failed!");
+
+                if (Application.isBatchMode)
+                {
+                    Debug.LogError(e);
+                    EditorApplication.Exit(-1);
+                }
+                else
+                {
+                    throw;
+                }
+            }
             finally
             {
-                Debug.Log("Export complete!");
+                Debug.Log("Export completed!");
 
                 if (!Application.isBatchMode)
                 {
@@ -244,9 +272,23 @@ public static class Build
                 if (report.summary.result != BuildResult.Succeeded)
                     throw new Exception("Build failed");
             }
+            catch (Exception e)
+            {
+                Debug.Log("Export failed!");
+
+                if (Application.isBatchMode)
+                {
+                    Debug.LogError(e);
+                    EditorApplication.Exit(-1);
+                }
+                else
+                {
+                    throw;
+                }
+            }
             finally
             {
-                Debug.Log("Export complete!");
+                Debug.Log("Export completed!");
 
                 if (!Application.isBatchMode)
                 {
@@ -302,7 +344,10 @@ public static class Build
         string destinationPath,
         bool overwriteFiles = true)
     {
-        File.Copy(sourcePath, destinationPath, overwriteFiles);
+        if (overwriteFiles || !File.Exists(destinationPath))
+        {
+            File.Copy(sourcePath, destinationPath, overwriteFiles);
+        }
     }
 
     private static string CopyGradleBlock(

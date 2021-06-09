@@ -23,152 +23,164 @@ public static class Build
 
     static readonly string apkPath = Path.Combine(ProjectPath, "Builds/" + Application.productName + ".apk");
 
-    [MenuItem("Build/Export Android %&a", false, 1)]
-    public static void DoBuildAndroid()
+    [MenuItem("Build/Export Android/Debug", false, 1)]
+    public static void DoBuildAndroid_Debug() => DoBuildAndroidInternal(Il2CppCompilerConfiguration.Debug);
+
+    [MenuItem("Build/Export Android/Release", false, 1)]
+    public static void DoBuildAndroid_Release() => DoBuildAndroidInternal(Il2CppCompilerConfiguration.Release);
+
+    [MenuItem("Build/Export Android/Master", false, 1)]
+    public static void DoBuildAndroid() => DoBuildAndroidInternal(Il2CppCompilerConfiguration.Master);
+
+    private static void DoBuildAndroidInternal(Il2CppCompilerConfiguration compilerConfiguration)
     {
+        CurrentGroup = BuildTargetGroup.Android;
+
+        var prevCompilerConfiguration = PlayerSettings.GetIl2CppCompilerConfiguration(BuildTargetGroup.Android);
+        var prevScriptingDefines = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.Android);
+        var isDebug = !(compilerConfiguration == Il2CppCompilerConfiguration.Master);
+
+        using var revertSettings = new Disposable(() =>
+        {
+            CurrentGroup = null;
+
+            PlayerSettings.SetIl2CppCompilerConfiguration(BuildTargetGroup.Android, prevCompilerConfiguration);
+
+            if (!Application.isBatchMode)
+            {
+                PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Android, prevScriptingDefines);
+            }
+        });
+
+        PlayerSettings.SetIl2CppCompilerConfiguration(BuildTargetGroup.Android, compilerConfiguration);
+        PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Android, ProcessDefines(prevScriptingDefines, isDebug));
+
+        string exportPath = Path.GetFullPath(Path.Combine(ProjectPath, "../../android/UnityExport"));
+        string buildPath = apkPath;
+
+        if (Directory.Exists(apkPath))
+            Directory.Delete(apkPath, true);
+
+        DeleteFolderContent(exportPath);
+
+        EditorUserBuildSettings.androidBuildSystem = AndroidBuildSystem.Gradle;
+        EditorUserBuildSettings.exportAsGoogleAndroidProject = true;
+
         try
         {
-            CurrentGroup = BuildTargetGroup.Android;
+            var options = (compilerConfiguration == Il2CppCompilerConfiguration.Debug ? BuildOptions.AllowDebugging : BuildOptions.None);
+            var report = BuildPipeline.BuildPlayer(
+                GetEnabledScenes(),
+                apkPath,
+                BuildTarget.Android,
+                options);
 
-            string exportPath = Path.GetFullPath(Path.Combine(ProjectPath, "../../android/UnityExport"));
-            string buildPath = apkPath;
+            if (report.summary.result != BuildResult.Succeeded)
+                throw new Exception("Build failed");
 
-            if (Directory.Exists(apkPath))
-                Directory.Delete(apkPath, true);
-
-            DeleteFolderContent(exportPath);
-
-            EditorUserBuildSettings.androidBuildSystem = AndroidBuildSystem.Gradle;
-            EditorUserBuildSettings.exportAsGoogleAndroidProject = true;
-
-            string oldScriptingDefines = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.Android);
-            string newScriptingDefines = ProcessDefines(oldScriptingDefines);
-            PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Android, newScriptingDefines);
-
-            try
+            // Modify build.gradle
             {
-                var report = BuildPipeline.BuildPlayer(
-                    GetEnabledScenes(),
-                    apkPath,
-                    BuildTarget.Android,
-                    BuildOptions.AllowDebugging);
+                Debug.Log("Patch launcher/build.gradle");
+                var launcher_build_file = Path.Combine(buildPath, "launcher/build.gradle");
+                var launcher_build_text = File.ReadAllText(launcher_build_file);
 
-                if (report.summary.result != BuildResult.Succeeded)
-                    throw new Exception("Build failed");
-
-                // Modify build.gradle
+                Debug.Log("Patch unityLibrary/build.gradle");
+                var build_file = Path.Combine(buildPath, "unityLibrary/build.gradle");
+                var build_text = File.ReadAllText(build_file);
+                build_text = build_text.Replace("com.android.application", "com.android.library");
+                build_text = Regex.Replace(build_text, @"\n.*applicationId '.+'.*\n", "\n");
+                build_text = Regex.Replace(build_text, @":unityLibrary", ":UnityExport");
+                build_text = Regex.Replace(build_text, @"dependencies\s+\{[^\}]+\}", d =>
                 {
-                    Debug.Log("Patch launcher/build.gradle");
-                    var launcher_build_file = Path.Combine(buildPath, "launcher/build.gradle");
-                    var launcher_build_text = File.ReadAllText(launcher_build_file);
+                    var value = d.Value;
+                    value = Regex.Replace(value, @"(\s+)(implementation project)([^\n]+)'([^\n]+)('[^\n]+)", m => m.Groups[1].Value + "api project(':" + m.Groups[4].Value + m.Groups[5].Value);
+                    value = Regex.Replace(value, @"(\s+)(compile)([^\n]+\n)", m => m.Groups[1].Value + "api" + m.Groups[3].Value);
+                    value = Regex.Replace(value, @"(\s+)(implementation)([^\n]+\n)", m => m.Groups[1].Value + "api" + m.Groups[3].Value);
+                    value = Regex.Replace(value, @"(\s+)api.+appcenter-release.+", m => m.Groups[1].Value + "api 'com.microsoft.appcenter:appcenter:+'");
+                    value = Regex.Replace(value, @"(\s+)api.+appcenter-analytics-release.+", m => m.Groups[1].Value + "api 'com.microsoft.appcenter:appcenter-analytics:+'");
+                    value = Regex.Replace(value, @"(\s+)api.+appcenter-crashes-release.+", m => m.Groups[1].Value + "api 'com.microsoft.appcenter:appcenter-crashes:+'");
+                    return value;
+                });
 
-                    Debug.Log("Patch unityLibrary/build.gradle");
-                    var build_file = Path.Combine(buildPath, "unityLibrary/build.gradle");
-                    var build_text = File.ReadAllText(build_file);
-                    build_text = build_text.Replace("com.android.application", "com.android.library");
-                    build_text = Regex.Replace(build_text, @"\n.*applicationId '.+'.*\n", "\n");
-                    build_text = Regex.Replace(build_text, @":unityLibrary", ":UnityExport");
-                    build_text = Regex.Replace(build_text, @"dependencies\s+\{[^\}]+\}", d =>
-                    {
-                        var value = d.Value;
-                        value = Regex.Replace(value, @"(\s+)(implementation project)([^\n]+)'([^\n]+)('[^\n]+)", m => m.Groups[1].Value + "api project(':" + m.Groups[4].Value + m.Groups[5].Value);
-                        value = Regex.Replace(value, @"(\s+)(compile)([^\n]+\n)", m => m.Groups[1].Value + "api" + m.Groups[3].Value);
-                        value = Regex.Replace(value, @"(\s+)(implementation)([^\n]+\n)", m => m.Groups[1].Value + "api" + m.Groups[3].Value);
-                        value = Regex.Replace(value, @"(\s+)api.+appcenter-release.+", m => m.Groups[1].Value + "api 'com.microsoft.appcenter:appcenter:+'");
-                        value = Regex.Replace(value, @"(\s+)api.+appcenter-analytics-release.+", m => m.Groups[1].Value + "api 'com.microsoft.appcenter:appcenter-analytics:+'");
-                        value = Regex.Replace(value, @"(\s+)api.+appcenter-crashes-release.+", m => m.Groups[1].Value + "api 'com.microsoft.appcenter:appcenter-crashes:+'");
-                        return value;
-                    });
+                build_text = CopyGradleBlock(
+                    launcher_build_text,
+                    build_text,
+                    @"(\s+aaptOptions\s+\{[^\}]+\})",
+                    @"(android\s+\{)(([^\}]+)+)",
+                    overwrite: false);
 
-                    build_text = CopyGradleBlock(
-                        launcher_build_text,
-                        build_text,
-                        @"(\s+aaptOptions\s+\{[^\}]+\})",
-                        @"(android\s+\{)(([^\}]+)+)",
-                        overwrite: false);
+                build_text = CopyGradleBlock(
+                    launcher_build_text,
+                    build_text,
+                    @"(\s+buildTypes\s+\{([^\{\}]+\{[^\{\}]+\}[^\{\}]+)+\})",
+                    @"(android\s+\{)(([^\}]+)+)",
+                    overwrite: false);
 
-                    build_text = CopyGradleBlock(
-                        launcher_build_text,
-                        build_text,
-                        @"(\s+buildTypes\s+\{([^\{\}]+\{[^\{\}]+\}[^\{\}]+)+\})",
-                        @"(android\s+\{)(([^\}]+)+)",
-                        overwrite: false);
-
-                    File.WriteAllText(build_file, build_text);
-                }
-
-                // Modify AndroidManifest.xml
-                Debug.Log("Patch AndroidManifest.xml");
-                var manifest_file = Path.Combine(buildPath, "unityLibrary/src/main/AndroidManifest.xml");
-                var manifest_text = File.ReadAllText(manifest_file);
-                manifest_text = Regex.Replace(manifest_text, @"\s*<uses-sdk[^>]*/>", "");
-                manifest_text = Regex.Replace(manifest_text, @"<application .*>", "<application>");
-                Regex regex = new Regex(@"<activity.*>(\s|\S)+?</activity>", RegexOptions.Multiline);
-                manifest_text = regex.Replace(manifest_text, "");
-                File.WriteAllText(manifest_file, manifest_text);
-
-
-                // Copy build output to UnityExport
-                Debug.Log("Copy to UnityExport");
-                CopyDirectory(
-                    buildPath,
-                    exportPath,
-                    mergeDirectories: false,
-                    overwriteFiles: true);
-
-                // Copy local.properties
-                Debug.Log("Copy local.properties");
-                CopyFile(
-                    Path.Combine(exportPath, "local.properties"),
-                    Path.Combine(exportPath, "../local.properties"),
-                    overwriteFiles: true);
-
-                // Copy gradle.properties
-                Debug.Log("Copy gradle.properties");
-                CopyFile(
-                    Path.Combine(exportPath, "gradle.properties"),
-                    Path.Combine(exportPath, "unityLibrary/gradle.properties"),
-                    overwriteFiles: true);
-
-                // Copy some files from 'launcher' project
-                Debug.Log("Copy resources");
-                CopyDirectory(
-                    Path.Combine(exportPath, "launcher/src/main/res"),
-                    Path.Combine(exportPath, "unityLibrary/src/main/res"),
-                    mergeDirectories: true,
-                    overwriteFiles: true);
+                File.WriteAllText(build_file, build_text);
             }
-            catch (Exception e)
-            {
-                Debug.Log("Export failed!");
 
-                if (Application.isBatchMode)
-                {
-                    Debug.LogError(e);
-                    EditorApplication.Exit(-1);
-                }
-                else
-                {
-                    throw;
-                }
+            // Modify AndroidManifest.xml
+            Debug.Log("Patch AndroidManifest.xml");
+            var manifest_file = Path.Combine(buildPath, "unityLibrary/src/main/AndroidManifest.xml");
+            var manifest_text = File.ReadAllText(manifest_file);
+            manifest_text = Regex.Replace(manifest_text, @"\s*<uses-sdk[^>]*/>", "");
+            manifest_text = Regex.Replace(manifest_text, @"<application .*>", "<application>");
+            Regex regex = new Regex(@"<activity.*>(\s|\S)+?</activity>", RegexOptions.Multiline);
+            manifest_text = regex.Replace(manifest_text, "");
+            File.WriteAllText(manifest_file, manifest_text);
+
+            // Copy build output to UnityExport
+            Debug.Log("Copy to UnityExport");
+            CopyDirectory(
+                buildPath,
+                exportPath,
+                mergeDirectories: false,
+                overwriteFiles: true);
+
+            // Copy local.properties
+            Debug.Log("Copy local.properties");
+            CopyFile(
+                Path.Combine(exportPath, "local.properties"),
+                Path.Combine(exportPath, "../local.properties"),
+                overwriteFiles: true);
+
+            // Copy gradle.properties
+            Debug.Log("Copy gradle.properties");
+            CopyFile(
+                Path.Combine(exportPath, "gradle.properties"),
+                Path.Combine(exportPath, "unityLibrary/gradle.properties"),
+                overwriteFiles: true);
+
+            // Copy some files from 'launcher' project
+            Debug.Log("Copy resources");
+            CopyDirectory(
+                Path.Combine(exportPath, "launcher/src/main/res"),
+                Path.Combine(exportPath, "unityLibrary/src/main/res"),
+                mergeDirectories: true,
+                overwriteFiles: true);
+        }
+        catch (Exception e)
+        {
+            Debug.Log("Export failed!");
+
+            if (Application.isBatchMode)
+            {
+                Debug.LogError(e);
+                EditorApplication.Exit(-1);
             }
-            finally
+            else
             {
-                Debug.Log("Export completed!");
-
-                if (!Application.isBatchMode)
-                {
-                    PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Android, oldScriptingDefines);
-                }
-                else
-                {
-                    EditorApplication.Exit(0);
-                }
+                throw;
             }
         }
         finally
         {
-            CurrentGroup = null;
+            Debug.Log("Export completed!");
+
+            if (Application.isBatchMode)
+            {
+                EditorApplication.Exit(0);
+            }
         }
     }
 
@@ -186,7 +198,7 @@ public static class Build
             EditorUserBuildSettings.iOSBuildConfigType = iOSBuildType.Release;
 
             string oldScriptingDefines = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.iOS);
-            string newScriptingDefines = ProcessDefines(oldScriptingDefines);
+            string newScriptingDefines = ProcessDefines(oldScriptingDefines, true);
             PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.iOS, newScriptingDefines);
 
             try
@@ -256,7 +268,7 @@ public static class Build
             // EditorUserBuildSettings.SetWSADotNetNative(WSABuildType.Master, false);
 
             string oldScriptingDefines = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.WSA);
-            string newScriptingDefines = ProcessDefines(oldScriptingDefines);
+            string newScriptingDefines = ProcessDefines(oldScriptingDefines, true);
             PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.WSA, newScriptingDefines);
 
             try
@@ -405,9 +417,16 @@ public static class Build
         }
     }
 
-    private static string ProcessDefines(string defines)
+    private static string ProcessDefines(string defines, bool isDebug)
     {
         defines = Regex.Replace(defines, ";?UNITY_STANDALONE;?", ";");
+
+        if (isDebug)
+        {
+            defines = Regex.Replace(defines, ";?ENABLE_TRACE_LOGGING;?", ";");
+            defines = Regex.Replace(defines, ";?ENABLE_DEBUG_LOGGING;?", ";");
+        }
+
         return $"{defines};UNITY_EXPORT";
     }
 }

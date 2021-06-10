@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
@@ -87,6 +88,7 @@ public static class Build
                 Debug.Log("Patch unityLibrary/build.gradle");
                 var build_file = Path.Combine(buildPath, "unityLibrary/build.gradle");
                 var build_text = File.ReadAllText(build_file);
+
                 build_text = build_text.Replace("com.android.application", "com.android.library");
                 build_text = Regex.Replace(build_text, @"\n.*applicationId '.+'.*\n", "\n");
                 build_text = Regex.Replace(build_text, @":unityLibrary", ":UnityExport");
@@ -101,6 +103,29 @@ public static class Build
                     value = Regex.Replace(value, @"(\s+)api.+appcenter-crashes-release.+", m => m.Groups[1].Value + "api 'com.microsoft.appcenter:appcenter-crashes:+'");
                     return value;
                 });
+                build_text = Regex.Replace(build_text, @"\s*def BuildIl2Cpp\([^\(\)\{\}]*\)\s*\{", d =>
+                {
+                    var builder = new StringBuilder();
+                    builder.AppendLine();
+                    builder.AppendLine("def getUnityDir() {");
+                    builder.AppendLine("    Properties local = new Properties()");
+                    builder.AppendLine("    local.load(new FileInputStream(\"${rootDir}/local.properties\"))");
+                    builder.AppendLine("    return local.getProperty('unity.dir')");
+                    builder.AppendLine("}");
+                    builder.AppendLine(d.Groups[0].Value);
+                    builder.AppendLine("    String il2cppPath = getUnityDir();");
+                    builder.AppendLine("    if (il2cppPath) {");
+                    builder.AppendLine("        il2cppPath = il2cppPath + \"/Editor/Data\"");
+                    builder.AppendLine("    } else {");
+                    builder.AppendLine("        il2cppPath = workingDir + \"/src/main/Il2CppOutputProject\"");
+                    builder.AppendLine("    }");
+                    return builder.ToString();
+                });
+
+                build_text = Regex.Replace(
+                    build_text,
+                    "commandLine\\(workingDir\\s*\\+\\s*\"/src/main/Il2CppOutputProject/IL2CPP/build/deploy/netcoreapp3\\.1/il2cpp\\.exe\",",
+                    "commandLine(il2cppPath + \"/IL2CPP/build/deploy/netcoreapp3.1/il2cpp\",");
 
                 build_text = CopyGradleBlock(
                     launcher_build_text,

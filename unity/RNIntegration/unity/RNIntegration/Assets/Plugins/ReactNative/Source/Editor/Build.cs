@@ -114,9 +114,7 @@ public static class Build
                     builder.AppendLine("}");
                     builder.AppendLine(d.Groups[0].Value);
                     builder.AppendLine("    String il2cppPath = getUnityDir();");
-                    builder.AppendLine("    if (il2cppPath) {");
-                    builder.AppendLine("        il2cppPath = il2cppPath + \"/Editor/Data\"");
-                    builder.AppendLine("    } else {");
+                    builder.AppendLine("    if (!il2cppPath) {");
                     builder.AppendLine("        il2cppPath = workingDir + \"/src/main/Il2CppOutputProject\"");
                     builder.AppendLine("    }");
                     return builder.ToString();

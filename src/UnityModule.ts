@@ -400,7 +400,7 @@ class UnityModuleImpl implements UnityModule {
                 }
             } else {
                 if (__DEBUG_UNITY_VIEW__) {
-                    console.log("GENERAL" + JSON.stringify(this.prettify(message.substr(UnityMessagePrefix.length))));
+                    console.log("GENERAL" + message.substr(UnityMessagePrefix.length));
                 }
 
                 if (Object.keys(this.unityMessageListeners).length > 0) {
@@ -426,30 +426,6 @@ class UnityModuleImpl implements UnityModule {
     private postMessageInternal(gameObject: string, methodName: string, message: string) {
         UnityNativeModule.postMessage(gameObject, methodName, message);
     };
-
-    private prettify(message: string): Object {
-        var result = JSON.parse(message);
-
-        if (result.type > UnityMessageType.Request) {
-            result.type = 'Request + ' + (result.type - UnityMessageType.Request);
-        } else if (result.type == UnityMessageType.Request) {
-            result.type = 'Request';
-        } else if (result.type == UnityMessageType.Canceled) {
-            result.type = 'Canceled';
-        } else if (result.type == UnityMessageType.Cancel) {
-            result.type = 'Cancel';
-        } else if (result.type == UnityMessageType.Error) {
-            result.type = 'Error';
-        } else if (result.type == UnityMessageType.Response) {
-            result.type = 'Response';
-        } else if (result.type == UnityMessageType.Default) {
-            result.type = 'Default';
-        } else if (result.type !== undefined && result.type !== null) {
-            result.type = 'Custom[' + result.type + ']';
-        }
-
-        return result;
-    }
 }
 
 export const UnityModule: UnityModule = new UnityModuleImpl();

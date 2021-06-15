@@ -59,9 +59,8 @@ public class UnityViewManager extends SimpleViewManager<UnityView> implements Li
 
     @Override
     public void onHostResume() {
-        if (UnityUtils.isUnityReady()) {
+        if (UnityUtils.isUnityReady() && !UnityUtils.isUnityPaused()) {
             UnityUtils.getPlayer().resume();
-            restoreUnityUserState();
         }
     }
 
@@ -80,28 +79,11 @@ public class UnityViewManager extends SimpleViewManager<UnityView> implements Li
         }
     }
 
-    private void restoreUnityUserState() {
-        // restore the unity player state
-        if (UnityUtils.isUnityPaused()) {
-            Handler handler = new Handler();
-            handler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    if (UnityUtils.getPlayer() != null) {
-                        UnityUtils.getPlayer().pause();
-                    }
-                }
-            }, 300); //TODO: 300 is the right one?
-        }
-    }
-
     @Override
     public void onViewAttachedToWindow(View v) {
-        restoreUnityUserState();
     }
 
     @Override
     public void onViewDetachedFromWindow(View v) {
-
     }
 }

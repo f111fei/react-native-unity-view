@@ -9,7 +9,7 @@ export enum UnityMessageType {
 
 export const UnityMessagePrefix = '@UnityMessage@';
 
-export interface IUnityMessage<TType extends number = UnityMessageType, TData = any> {
+export interface IUnityMessage<TType extends number = 0, TData = any> {
     readonly id: string;
     readonly type: TType;
     readonly data?: TData;
@@ -17,7 +17,7 @@ export interface IUnityMessage<TType extends number = UnityMessageType, TData = 
 
 export interface UnityMessage {
     readonly id: string;
-    readonly type: UnityMessageType;
+    readonly type: number;
     readonly uuid?: number;
     readonly data?: any;
 
@@ -34,13 +34,13 @@ export class UnityMessageImpl implements UnityMessage {
 
     constructor(message: string) {
         message = message.replace(UnityMessagePrefix, '');
-        this.m_json = JSON.parse(message) as UnityMessage;;
+        this.m_json = JSON.parse(message) as UnityMessage;
     }
 
     public get id(): string {
         return this.m_json.id;
     }
-    public get type(): UnityMessageType {
+    public get type(): number {
         return this.m_json.type;
     }
     public get uuid(): number | undefined {

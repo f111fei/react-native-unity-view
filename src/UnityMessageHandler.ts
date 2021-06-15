@@ -8,6 +8,7 @@ export interface UnityMessageHandler {
     readonly message: UnityMessage;
     sendResponse(data: any): void;
     sendError(error: any): void;
+    sendCanceled(): void;
     close(): void;
 }
 
@@ -82,7 +83,7 @@ export class UnityMessageHandlerImpl implements UnityMessageHandler {
         }
     }
 
-    private sendCanceled(): void {
+    sendCanceled(): void {
         if (this.isRequest) {
             this.m_responseSent = true;
             UnityNativeModule.postMessage('UnityMessageManager', 'onRNMessage', UnityMessagePrefix + JSON.stringify({

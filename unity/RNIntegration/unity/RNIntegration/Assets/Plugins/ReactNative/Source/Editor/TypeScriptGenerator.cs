@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.Serialization;
 using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEngine;
@@ -95,7 +96,8 @@ public static class TypeScriptGenerator
         {
             b.Attr.UseString =
                 b.Type.GetCustomAttribute<FlagsAttribute>() == null
-                && b.Type.GetCustomAttribute<UnityMessageTypeAttribute>() == null;
+                && b.Type.GetCustomAttribute<UnityMessageTypeAttribute>() == null
+                && b.Type.GetTypeInfo().DeclaredMembers.Any(m => m.GetCustomAttribute<EnumMemberAttribute>() != null);
         });
 
         builder.ExportAsInterfaces(allInterfaces, (b) =>

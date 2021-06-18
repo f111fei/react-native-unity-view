@@ -2,7 +2,7 @@
   "name": "com.unity.modules.reactnative",
   "displayName": "ReactNative bridge for Unity",
   "version": "1.2.0",
-  "unity": "2020.3",
+  "unity": "2021.1",
   "description": "",
   "keywords": [
     "react",

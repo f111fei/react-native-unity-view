@@ -151,6 +151,6 @@ public class UnityUtils {
         group.addView(unityPlayer, 0, layoutParams);
         unityPlayer.windowFocusChanged(true);
         unityPlayer.requestFocus();
-        unityPlayer.resume();
+        if(!_isUnityPaused) { unityPlayer.resume(); }
     }
 }

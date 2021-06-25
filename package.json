@@ -15,6 +15,7 @@
   ],
   "author": "xzper,coder89",
   "license": "MIT",
+  "homepage": "https://github.com/coder89/react-native-unity-view",
   "devDependencies": {
     "@types/prop-types": "^15.5.2",
     "@types/react": "^17.0.0",

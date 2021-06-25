@@ -22,7 +22,8 @@ public static class Build
 
     static readonly string ProjectPath = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
 
-    static readonly string apkPath = Path.Combine(ProjectPath, "Builds/" + Application.productName + ".apk");
+    static readonly string androidBuildPath = Path.Combine(ProjectPath, "Builds/android/" + Application.productName);
+    static readonly string iosBuildPath = Path.Combine(ProjectPath, "Builds/ios/" + Application.productName);
 
     [MenuItem("Build/Export Android/Debug", false, 1)]
     public static void DoBuildAndroid_Debug() => DoBuildAndroidInternal(Il2CppCompilerConfiguration.Debug);
@@ -35,6 +36,8 @@ public static class Build
 
     private static void DoBuildAndroidInternal(Il2CppCompilerConfiguration compilerConfiguration)
     {
+        Debug.Log("Building Android...");
+
         CurrentGroup = BuildTargetGroup.Android;
 
         var prevCompilerConfiguration = PlayerSettings.GetIl2CppCompilerConfiguration(BuildTargetGroup.Android);
@@ -57,12 +60,10 @@ public static class Build
         PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Android, ProcessDefines(prevScriptingDefines, isDebug));
 
         string exportPath = Path.GetFullPath(Path.Combine(ProjectPath, "../../android/UnityExport"));
-        string buildPath = apkPath;
+        string buildPath = androidBuildPath;
 
-        if (Directory.Exists(apkPath))
-            Directory.Delete(apkPath, true);
-
-        DeleteFolderContent(exportPath);
+        if (Directory.Exists(buildPath))
+            Directory.Delete(buildPath, true);
 
         EditorUserBuildSettings.androidBuildSystem = AndroidBuildSystem.Gradle;
         EditorUserBuildSettings.exportAsGoogleAndroidProject = true;
@@ -72,7 +73,7 @@ public static class Build
             var options = (compilerConfiguration == Il2CppCompilerConfiguration.Debug ? BuildOptions.AllowDebugging : BuildOptions.None);
             var report = BuildPipeline.BuildPlayer(
                 GetEnabledScenes(),
-                apkPath,
+                buildPath,
                 BuildTarget.Android,
                 options);
 
@@ -152,6 +153,9 @@ public static class Build
             manifest_text = regex.Replace(manifest_text, "");
             File.WriteAllText(manifest_file, manifest_text);
 
+            // Clear UnityExport
+            DeleteFolderContent(exportPath);
+
             // Copy build output to UnityExport
             Debug.Log("Copy to UnityExport");
             CopyDirectory(
@@ -207,67 +211,101 @@ public static class Build
         }
     }
 
-    [MenuItem("Build/Export IOS %&i", false, 2)]
-    public static void DoBuildIOS()
+    [MenuItem("Build/Export IOS/Debug", false, 1)]
+    public static void DoBuildIOS_Debug() => DoBuildIOSInternal(iOSBuildType.Debug, iOSSdkVersion.DeviceSDK);
+
+    [MenuItem("Build/Export IOS/Release", false, 1)]
+    public static void DoBuildIOS_Release() => DoBuildIOSInternal(iOSBuildType.Release, iOSSdkVersion.DeviceSDK);
+
+    [MenuItem("Build/Export IOS/Debug [Simulator]", false, 1)]
+    public static void DoBuildIOS_Debug_Simulator() => DoBuildIOSInternal(iOSBuildType.Debug, iOSSdkVersion.SimulatorSDK);
+
+    [MenuItem("Build/Export IOS/Release [Simulator]", false, 1)]
+    public static void DoBuildIOS_Release_Simulator() => DoBuildIOSInternal(iOSBuildType.Release, iOSSdkVersion.SimulatorSDK);
+
+    private static void DoBuildIOSInternal(iOSBuildType buildType, iOSSdkVersion sdkVersion)
     {
+        Debug.Log("Building iOS...");
+
+        CurrentGroup = BuildTargetGroup.iOS;
+
+        var prevCompilerConfiguration = PlayerSettings.GetIl2CppCompilerConfiguration(BuildTargetGroup.iOS);
+        var prevScriptingDefines = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.iOS);
+        var prev_sdkVersion = PlayerSettings.iOS.sdkVersion;
+        var isDebug = !(buildType == iOSBuildType.Debug);
+
+        using var revertSettings = new Disposable(() =>
+        {
+            CurrentGroup = null;
+
+            PlayerSettings.iOS.sdkVersion = prev_sdkVersion;
+            PlayerSettings.SetIl2CppCompilerConfiguration(BuildTargetGroup.iOS, prevCompilerConfiguration);
+
+            if (!Application.isBatchMode)
+            {
+                PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.iOS, prevScriptingDefines);
+            }
+        });
+
+        var compilerConfiguration = isDebug ? Il2CppCompilerConfiguration.Debug : Il2CppCompilerConfiguration.Master;
+        PlayerSettings.SetIl2CppCompilerConfiguration(BuildTargetGroup.iOS, compilerConfiguration);
+        PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.iOS, ProcessDefines(prevScriptingDefines, isDebug));
+        PlayerSettings.iOS.sdkVersion = sdkVersion;
+
+        string exportPath = Path.GetFullPath(Path.Combine(ProjectPath, "../../ios/UnityExport"));
+        string buildPath = iosBuildPath;
+
+        if (Directory.Exists(buildPath))
+            Directory.Delete(buildPath, true);
+
+        EditorUserBuildSettings.iOSBuildConfigType = buildType;
+
         try
         {
-            CurrentGroup = BuildTargetGroup.iOS;
+            var options = (buildType == iOSBuildType.Debug ? BuildOptions.AllowDebugging : BuildOptions.None);
+            var report = BuildPipeline.BuildPlayer(
+                GetEnabledScenes(),
+                buildPath,
+                BuildTarget.iOS,
+                options
+            );
 
-            string exportPath = Path.GetFullPath(Path.Combine(ProjectPath, "../../ios/UnityExport"));
+            if (report.summary.result != BuildResult.Succeeded)
+                throw new Exception("Build failed");
 
+            // Clear UnityExport
             DeleteFolderContent(exportPath);
 
-            EditorUserBuildSettings.iOSBuildConfigType = iOSBuildType.Release;
+            // Copy build output to UnityExport
+            Debug.Log("Copy to UnityExport");
+            CopyDirectory(
+                buildPath,
+                exportPath,
+                mergeDirectories: false,
+                overwriteFiles: true);
+        }
+        catch (Exception e)
+        {
+            Debug.Log("Export failed!");
 
-            string oldScriptingDefines = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.iOS);
-            string newScriptingDefines = ProcessDefines(oldScriptingDefines, true);
-            PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.iOS, newScriptingDefines);
-
-            try
+            if (Application.isBatchMode)
             {
-                var options = BuildOptions.AcceptExternalModificationsToPlayer;
-                var report = BuildPipeline.BuildPlayer(
-                    GetEnabledScenes(),
-                    exportPath,
-                    BuildTarget.iOS,
-                    options
-                );
-
-                if (report.summary.result != BuildResult.Succeeded)
-                    throw new Exception("Build failed");
+                Debug.LogError(e);
+                EditorApplication.Exit(-1);
             }
-            catch (Exception e)
+            else
             {
-                Debug.Log("Export failed!");
-
-                if (Application.isBatchMode)
-                {
-                    Debug.LogError(e);
-                    EditorApplication.Exit(-1);
-                }
-                else
-                {
-                    throw;
-                }
-            }
-            finally
-            {
-                Debug.Log("Export completed!");
-
-                if (!Application.isBatchMode)
-                {
-                    PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.iOS, oldScriptingDefines);
-                }
-                else
-                {
-                    EditorApplication.Exit(0);
-                }
+                throw;
             }
         }
         finally
         {
-            CurrentGroup = null;
+            Debug.Log("Export completed!");
+
+            if (Application.isBatchMode)
+            {
+                EditorApplication.Exit(0);
+            }
         }
     }
 

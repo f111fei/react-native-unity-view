@@ -2,6 +2,7 @@
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public static class ScenePreprocessor
 {
@@ -10,26 +11,41 @@ public static class ScenePreprocessor
     {
         if (BuildPipeline.isBuildingPlayer && !Application.isPlaying && Build.CurrentGroup.HasValue)
         {
-            var isUnityExport = PlayerSettings.GetScriptingDefineSymbolsForGroup(Build.CurrentGroup.Value)
-                .Split(';')
-                .Select(m => m.Trim())
-                .Any(m => m == "UNITY_EXPORT");
+            Debug.Log("Preprocessing scene: " + SceneManager.GetActiveScene().name);
 
-            if (isUnityExport)
+            if (!IsIOSSimulator())
             {
-                Debug.Log("Building Unity Export");
+                RemoveObjectsWithTag("SimulatorOnly");
+            }
 
-                foreach (GameObject obj in GameObject.FindGameObjectsWithTag("StandaloneOnly"))
-                {
-                    if (obj && !AssetDatabase.Contains(obj))
-                    {
-                        Object.DestroyImmediate(obj);
-                    }
-                }
+            if (IsUnityExport())
+            {
+                RemoveObjectsWithTag("StandaloneOnly");
             }
             else
             {
                 Debug.Log("Building Standalone");
+            }
+        }
+    }
+
+    private static bool IsIOSSimulator()
+        => Build.CurrentGroup == BuildTargetGroup.iOS
+        && PlayerSettings.iOS.sdkVersion == iOSSdkVersion.SimulatorSDK;
+
+    private static bool IsUnityExport()
+        => PlayerSettings.GetScriptingDefineSymbolsForGroup(Build.CurrentGroup.Value)
+                         .Split(';')
+                         .Select(m => m.Trim())
+                         .Any(m => m == "UNITY_EXPORT");
+
+    private static void RemoveObjectsWithTag(string tag)
+    {
+        foreach (GameObject obj in GameObject.FindGameObjectsWithTag(tag))
+        {
+            if (obj && !AssetDatabase.Contains(obj))
+            {
+                Object.DestroyImmediate(obj);
             }
         }
     }

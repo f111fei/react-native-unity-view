@@ -82,7 +82,7 @@ public static class XcodePostBuild
     /// The identifier added to touched file to avoid double edits when building to existing directory without
     /// replace existing content.
     /// </summary>
-    private const string TouchedMarker = "https://github.com/jiulongw/swift-unity#v1";
+    private const string TouchedMarker = "https://github.com/coder89/react-native-unity-view";
 
     [PostProcessBuild]
     public static void OnPostBuild(BuildTarget target, string pathToBuiltProject)
@@ -92,16 +92,16 @@ public static class XcodePostBuild
             return;
         }
 
-        if (!pathToBuiltProject.Contains("ios/UnityExport"))
-        {
-            return;
-        }
+        //if (!pathToBuiltProject.Contains("ios/UnityExport"))
+        //{
+        //    return;
+        //}
 
         PatchUnityNativeCode(pathToBuiltProject);
 
         UpdateUnityIOSExports(pathToBuiltProject);
 
-        UpdateUnityProjectFiles(pathToBuiltProject);
+        //UpdateUnityProjectFiles(pathToBuiltProject);
     }
 
     /// <summary>
@@ -121,6 +121,8 @@ public static class XcodePostBuild
         {
             Directory.CreateDirectory(configDir);
         }
+
+        Debug.Log($"Updating Unity iOS Exports {configPath} (overwrite = {File.Exists(configPath)})\n\n{config}");
 
         File.WriteAllText(configPath, config.ToString());
     }
@@ -433,6 +435,7 @@ public static class XcodePostBuild
         });
     }
 
+    // TODO: Verify this is not breaking anything (check github forks and history!)
     /// <summary>
     /// Edit 'SplashScreen.mm': Unity introduces its own 'LaunchScreen.storyboard' since 2017.3.0f3.
     /// Disable it here and use Swift project's launch screen instead.

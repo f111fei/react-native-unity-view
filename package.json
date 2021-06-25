@@ -1,7 +1,7 @@
 {
   "name": "react-native-unity-view",
   "version": "0.64.0",
-  "description": "",
+  "description": "UnityView integration component for React Native.",
   "main": "out/index.js",
   "typings": "out/index.d.ts",
   "scripts": {

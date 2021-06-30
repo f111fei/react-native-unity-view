@@ -3,10 +3,15 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 48;
+	objectVersion = 52;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0CBFDB7C268B32F0000599FB /* UnityFramework.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0CBFDB7B268B32F0000599FB /* UnityFramework.framework */; platformFilter = ios; };
+		0CBFDB80268B3382000599FB /* UnityNativeModule.h in Headers */ = {isa = PBXBuildFile; fileRef = 1B2EDAA521C2A48E00680B2F /* UnityNativeModule.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0CBFDB81268B3385000599FB /* RNUnityView.h in Headers */ = {isa = PBXBuildFile; fileRef = 1B593B782052A50C00CBB34F /* RNUnityView.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0CBFDB82268B3388000599FB /* RNUnityViewManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 1B593B7B2052A50D00CBB34F /* RNUnityViewManager.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0CBFDB83268B338D000599FB /* UnityUtils.h in Headers */ = {isa = PBXBuildFile; fileRef = 1B593B7C2052A50D00CBB34F /* UnityUtils.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		1B2EDAA421C2A43800680B2F /* UnityNativeModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 1B2EDAA321C2A43800680B2F /* UnityNativeModule.m */; };
 		1B593B7D2052A50D00CBB34F /* RNUnityViewManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 1B593B772052A50C00CBB34F /* RNUnityViewManager.m */; };
 		1B593B7E2052A50D00CBB34F /* UnityUtils.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1B593B792052A50C00CBB34F /* UnityUtils.mm */; };
@@ -26,6 +31,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0CBFDB7B268B32F0000599FB /* UnityFramework.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = UnityFramework.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		1B2EDAA321C2A43800680B2F /* UnityNativeModule.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = UnityNativeModule.m; sourceTree = "<group>"; };
 		1B2EDAA521C2A48E00680B2F /* UnityNativeModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UnityNativeModule.h; sourceTree = "<group>"; };
 		1B593B5F2052A47600CBB34F /* libRNUnityView.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libRNUnityView.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -42,12 +48,21 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0CBFDB7C268B32F0000599FB /* UnityFramework.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0CBFDB78268B32CC000599FB /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				0CBFDB7B268B32F0000599FB /* UnityFramework.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		1B593B562052A47600CBB34F = {
 			isa = PBXGroup;
 			children = (
@@ -60,6 +75,7 @@
 				1B593B7C2052A50D00CBB34F /* UnityUtils.h */,
 				1B593B792052A50C00CBB34F /* UnityUtils.mm */,
 				1B593B602052A47600CBB34F /* Products */,
+				0CBFDB78268B32CC000599FB /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -73,11 +89,26 @@
 		};
 /* End PBXGroup section */
 
+/* Begin PBXHeadersBuildPhase section */
+		0CBFDB7F268B3360000599FB /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0CBFDB80268B3382000599FB /* UnityNativeModule.h in Headers */,
+				0CBFDB81268B3385000599FB /* RNUnityView.h in Headers */,
+				0CBFDB82268B3388000599FB /* RNUnityViewManager.h in Headers */,
+				0CBFDB83268B338D000599FB /* UnityUtils.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
 /* Begin PBXNativeTarget section */
 		1B593B5E2052A47600CBB34F /* RNUnityView */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 1B593B682052A47600CBB34F /* Build configuration list for PBXNativeTarget "RNUnityView" */;
 			buildPhases = (
+				0CBFDB7F268B3360000599FB /* Headers */,
 				1B593B5B2052A47600CBB34F /* Sources */,
 				1B593B5C2052A47600CBB34F /* Frameworks */,
 				1B593B5D2052A47600CBB34F /* CopyFiles */,

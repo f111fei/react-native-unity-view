@@ -1,0 +1,47 @@
+//
+//  UnityConfig.xcconfig
+//  rnunitydemo
+//
+//  Created by xzper on 2018/3/6.
+//  Copyright © 2018年 Facebook. All rights reserved.
+//
+UNITY_SCRIPTING_BACKEND = il2cpp;
+GCC_PREFIX_HEADER = $(SRCROOT)/../UnityExport/Classes/Prefix.pch;
+
+HEADER_SEARCH_PATHS = $(inherited) "$(SRCROOT)/../UnityExport/Classes" "$(SRCROOT)/../UnityExport/Classes/Unity" "$(SRCROOT)/../UnityExport/Classes/Native" "$(SRCROOT)/../UnityExport/Classes/UI" "$(SRCROOT)/../UnityExport/Classes/PluginBase" "$(SRCROOT)/../UnityExport/Libraries" "$(SRCROOT)/../UnityExport/Libraries/libil2cpp/include" ${PODS_HEADER_PATHS};
+
+LIBRARY_SEARCH_PATHS = $(inherited) "$(SRCROOT)/../UnityExport/Libraries" "$(SRCROOT)/../UnityExport/Libraries/libil2cpp/include" ${PODS_LIBRARY_PATHS};
+
+// If using .net 4.0 in Unity, append -DNET_4_0 to OTHER_CFLAGS
+OTHER_CFLAGS = $(inherited) -DINIT_SCRIPTING_BACKEND=1 -fno-strict-overflow -DRUNTIME_IL2CPP=1;
+
+OTHER_LDFLAGS = $(inherited) -weak-lSystem -weak_framework CoreMotion -weak_framework GameKit -weak_framework iAd -framework AVFoundation -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework CoreMedia -framework CoreVideo -framework Foundation -framework MediaPlayer -framework MediaToolbox -framework Metal -framework OpenAL -framework OpenGLES -framework QuartzCore -framework SystemConfiguration -framework UIKit -liconv.2 -liPhone-lib -lil2cpp ${PODS_LIBRARIES};
+
+CLANG_CXX_LANGUAGE_STANDARD = c++0x;
+CLANG_CXX_LIBRARY = libc++;
+CLANG_ENABLE_MODULES = NO;
+CLANG_WARN_BOOL_CONVERSION = NO;
+CLANG_WARN_CONSTANT_CONVERSION = NO;
+CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES;
+CLANG_WARN_EMPTY_BODY = NO;
+CLANG_WARN_ENUM_CONVERSION = NO;
+CLANG_WARN_INT_CONVERSION = NO;
+CLANG_WARN_OBJC_ROOT_CLASS = YES;
+CLANG_WARN_UNREACHABLE_CODE = NO;
+CLANG_WARN__DUPLICATE_METHOD_MATCH = NO;
+GCC_C_LANGUAGE_STANDARD = c99;
+GCC_ENABLE_OBJC_EXCEPTIONS = NO;
+GCC_ENABLE_CPP_RTTI = NO;
+GCC_PRECOMPILE_PREFIX_HEADER = YES;
+GCC_THUMB_SUPPORT = NO;
+GCC_USE_INDIRECT_FUNCTION_CALLS = NO;
+GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
+GCC_WARN_64_TO_32_BIT_CONVERSION[arch=*64] = YES;
+GCC_WARN_ABOUT_RETURN_TYPE = YES;
+GCC_WARN_UNDECLARED_SELECTOR = NO;
+GCC_WARN_UNINITIALIZED_AUTOS = NO;
+GCC_WARN_UNUSED_FUNCTION = NO;
+
+ENABLE_BITCODE = NO;
+
+DEAD_CODE_STRIPPING = YES;

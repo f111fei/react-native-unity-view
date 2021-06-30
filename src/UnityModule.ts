@@ -1,8 +1,9 @@
-import { NativeModules, DeviceEventEmitter } from 'react-native';
+import { NativeModules } from 'react-native';
 import { UnityMessage, UnityMessageImpl, UnityMessagePrefix, UnityMessageType } from "./UnityMessage";
 import { UnityMessageHandler, UnityMessageHandlerImpl } from "./UnityMessageHandler";
 import { Observable, Subscriber, TeardownLogic } from 'rxjs';
 import { IUnityRequest } from './UnityRequest';
+import UnityEventEmitter from './UnityEventEmitter';
 
 const { UnityNativeModule } = NativeModules;
 
@@ -126,7 +127,7 @@ class UnityModuleImpl implements UnityModule {
     private createListeners() {
         this.stringListeners = {};
         this.unityMessageListeners = {};
-        DeviceEventEmitter.addListener('onUnityMessage', (message) => {
+        UnityEventEmitter.addListener('onUnityMessage', (message) => {
             const result = this.handleMessage(message);
             if (result) {
                 if (typeof result === 'string') {

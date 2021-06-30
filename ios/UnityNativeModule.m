@@ -1,14 +1,9 @@
-//
-//  UnityNativeModule.m
-//  RNUnityView
-//
-//  Created by xzper on 2018/12/13.
-//  Copyright © 2018 xzper. All rights reserved.
-//
-
 #import "UnityNativeModule.h"
 
 @implementation UnityNativeModule
+{
+  bool hasListeners;
+}
 
 @synthesize bridge = _bridge;
 
@@ -16,56 +11,66 @@ RCT_EXPORT_MODULE(UnityNativeModule);
 
 - (id)init
 {
-    self = [super init];
-    if (self) {
-        [UnityUtils addUnityEventListener:self];
-    }
-    return self;
+  self = [super init];
+  if (self) {
+    [UnityUtils addUnityEventListener:self];
+  }
+  return self;
 }
 
 - (NSArray<NSString *> *)supportedEvents
 {
-    return @[@"onUnityMessage"];
+  return @[@"onUnityMessage"];
 }
 
 + (BOOL)requiresMainQueueSetup
 {
-    return YES;
+  return YES;
+}
+
+-(void)startObserving
+{
+  hasListeners = YES;
+}
+
+-(void)stopObserving
+{
+  hasListeners=NO;
 }
 
 RCT_EXPORT_METHOD(isReady:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
 {
-    resolve(@([UnityUtils isUnityReady]));
+  resolve(@([UnityUtils isUnityReady]));
 }
-
-RCT_EXPORT_METHOD(createUnity:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
-{
-    [UnityUtils createPlayer:^{
-        resolve(@(YES));
-    }];
-}
+//
+//RCT_EXPORT_METHOD(createUnity:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
+//{
+//  [UnityUtils createPlayer:^{
+//    resolve(@(YES));
+//  }];
+//}
 
 RCT_EXPORT_METHOD(postMessage:(NSString *)gameObject methodName:(NSString *)methodName message:(NSString *)message)
 {
-    UnityPostMessage(gameObject, methodName, message);
+  UnityPostMessage(gameObject, methodName, message);
 }
 
 RCT_EXPORT_METHOD(pause)
 {
-    UnityPauseCommand();
+  UnityPauseCommand();
 }
 
 RCT_EXPORT_METHOD(resume)
 {
-    UnityResumeCommand();
+  UnityResumeCommand();
 }
 
 - (void)onMessage:(NSString *)message {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    [_bridge.eventDispatcher sendDeviceEventWithName:@"onUnityMessage"
-                                                body:message];
-#pragma clang diagnostic pop
+  //if (hasListeners){
+    [_bridge.eventDispatcher sendEvent:<#(id<RCTEvent>)#> sendEvent:<#(id<RCTEvent>)#>
+    [self sendEventWithName:@"onUnityMessage"
+                       body:[NSString stringWithUTF8String:[message UTF8String]]];
+  //}
 }
 
 @end

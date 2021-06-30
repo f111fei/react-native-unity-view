@@ -18,7 +18,7 @@ import javax.annotation.Nullable;
  */
 
 public class UnityViewManager extends SimpleViewManager<UnityView> implements LifecycleEventListener, View.OnAttachStateChangeListener {
-    private static final String REACT_CLASS = "UnityView";
+    private static final String REACT_CLASS = "RNUnityView";
 
     private ReactApplicationContext context;
 

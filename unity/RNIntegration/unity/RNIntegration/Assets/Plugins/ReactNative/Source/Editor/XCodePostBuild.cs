@@ -47,36 +47,19 @@ using Application = UnityEngine.Application;
 public static class XcodePostBuild
 {
     /// <summary>
-    /// Path to the root directory of Xcode project.
-    /// This should point to the directory of '${XcodeProjectName}.xcodeproj'.
-    /// It is recommended to use relative path here.
-    /// Current directory is the root directory of this Unity project, i.e. the directory of 'Assets' folder.
-    /// Sample value: "../xcode"
-    /// </summary>
-    private const string XcodeProjectRoot = "../../ios";
-
-    /// <summary>
     /// Name of the Xcode project.
     /// This script looks for '${XcodeProjectName} + ".xcodeproj"' under '${XcodeProjectRoot}'.
     /// Sample value: "DemoApp"
     /// </summary>
-    private static string XcodeProjectName = Application.productName;
-
-    /// <summary>
-    /// Directories, relative to the root directory of the Xcode project, to put generated Unity iOS build output.
-    /// </summary>
-    private static string ClassesProjectPath =  "UnityExport/Classes";
-    private static string LibrariesProjectPath = "UnityExport/Libraries";
-	private static string DataProjectPath =  "UnityExport/Data";
+    private static string XcodeProjectName = "Unity-iPhone";
+    private static string UnityFrameworkTargetName = "UnityFramework";
 
     /// <summary>
     /// Path, relative to the root directory of the Xcode project, to put information about generated Unity output.
     /// </summary>
-    private static string ExportsConfigProjectPath =  "UnityExport/Exports.xcconfig";
+    //private static string ExportsConfigProjectPath =  "UnityExport/Exports.xcconfig";
 
     private static string PbxFilePath = XcodeProjectName + ".xcodeproj/project.pbxproj";
-
-    private const string BackupExtension = ".bak";
 
     /// <summary>
     /// The identifier added to touched file to avoid double edits when building to existing directory without
@@ -92,39 +75,9 @@ public static class XcodePostBuild
             return;
         }
 
-        //if (!pathToBuiltProject.Contains("ios/UnityExport"))
-        //{
-        //    return;
-        //}
-
         PatchUnityNativeCode(pathToBuiltProject);
 
-        UpdateUnityIOSExports(pathToBuiltProject);
-
-        //UpdateUnityProjectFiles(pathToBuiltProject);
-    }
-
-    /// <summary>
-    /// Writes current Unity version and output path to 'Exports.xcconfig' file.
-    /// </summary>
-    private static void UpdateUnityIOSExports(string pathToBuiltProject)
-    {
-        var config = new StringBuilder();
-        config.AppendFormat("UNITY_RUNTIME_VERSION = {0};", Application.unityVersion);
-        config.AppendLine();
-        config.AppendFormat("UNITY_IOS_EXPORT_PATH = {0};", pathToBuiltProject);
-        config.AppendLine();
-
-        var configPath = Path.Combine(XcodeProjectRoot, ExportsConfigProjectPath);
-        var configDir = Path.GetDirectoryName(configPath);
-        if (!Directory.Exists(configDir))
-        {
-            Directory.CreateDirectory(configDir);
-        }
-
-        Debug.Log($"Updating Unity iOS Exports {configPath} (overwrite = {File.Exists(configPath)})\n\n{config}");
-
-        File.WriteAllText(configPath, config.ToString());
+        UpdateUnityProjectFiles(pathToBuiltProject);
     }
 
     /// <summary>
@@ -135,130 +88,16 @@ public static class XcodePostBuild
     private static void UpdateUnityProjectFiles(string pathToBuiltProject)
     {
         var pbx = new PBXProject();
-        var pbxPath = Path.Combine(XcodeProjectRoot, PbxFilePath);
+        var pbxPath = Path.Combine(pathToBuiltProject, PbxFilePath);
         pbx.ReadFromFile(pbxPath);
 
-        // Add UnityExport/Classes
-        ProcessUnityDirectory(
-            pbx,
-            Path.Combine(pathToBuiltProject, "Classes"),
-            Path.Combine(XcodeProjectRoot, ClassesProjectPath),
-            ClassesProjectPath);
-
-        // Add UnityExport/Libraries
-        ProcessUnityDirectory(
-            pbx,
-            Path.Combine(pathToBuiltProject, "Libraries"),
-            Path.Combine(XcodeProjectRoot, LibrariesProjectPath),
-            LibrariesProjectPath);
-
-        // Add UnityExport/Data
-		var targetGuid = pbx.TargetGuidByName(XcodeProjectName);
-		var fileGuid = pbx.AddFolderReference(Path.Combine(pathToBuiltProject, "Data"), DataProjectPath);
-		pbx.AddFileToBuild(targetGuid, fileGuid);
+        // Add Data to UnityFramework target
+        var targetGuid = pbx.TargetGuidByName(UnityFrameworkTargetName);
+        var targetGuid2 = pbx.GetUnityFrameworkTargetGuid();
+        var fileGuid = pbx.FindFileGuidByProjectPath("Data");
+        pbx.AddFileToBuild(targetGuid, fileGuid);
 
         pbx.WriteToFile(pbxPath);
-    }
-
-    /// <summary>
-    /// Update pbx project file by adding src files and removing extra files that
-    /// exists in dest but not in src any more.
-    ///
-    /// This method only updates the pbx project file. It does not copy or delete
-    /// files in Swift Xcode project. The Swift Xcode project will do copy and delete
-    /// during build, and it should copy files if contents are different, regardless
-    /// of the file time.
-    /// </summary>
-    /// <param name="pbx">The pbx project.</param>
-    /// <param name="src">The directory where Unity project is built.</param>
-    /// <param name="dest">The directory of the Swift Xcode project where the
-    /// Unity project is embedded into.</param>
-    /// <param name="projectPathPrefix">The prefix of project path in Swift Xcode
-    /// project for Unity code files. E.g. "DempApp/Unity/Classes" for all files
-    /// under Classes folder from Unity iOS build output.</param>
-    private static void ProcessUnityDirectory(PBXProject pbx, string src, string dest, string projectPathPrefix)
-    {
-        var targetGuid = pbx.TargetGuidByName(XcodeProjectName);
-        if (string.IsNullOrEmpty(targetGuid)) {
-            throw new Exception(string.Format("TargetGuid could not be found for '{0}'", XcodeProjectName));
-        }
-
-        // newFiles: array of file names in build output that do not exist in project.pbx manifest.
-        // extraFiles: array of file names in project.pbx manifest that do not exist in build output.
-        // Build output files that already exist in project.pbx manifest will be skipped to minimize
-        // changes to project.pbx file.
-        string[] newFiles, extraFiles;
-        CompareDirectories(src, dest, out newFiles, out extraFiles);
-
-        foreach (var f in newFiles)
-        {
-            if (ShouldExcludeFile(f))
-            {
-                continue;
-            }
-
-            var projPath = Path.Combine(projectPathPrefix, f);
-            if (!pbx.ContainsFileByProjectPath(projPath))
-            {
-                var guid = pbx.AddFile(projPath, projPath);
-                pbx.AddFileToBuild(targetGuid, guid);
-
-                Debug.LogFormat("Added file to pbx: '{0}'", projPath);
-            }
-        }
-
-        foreach (var f in extraFiles)
-        {
-            var projPath = Path.Combine(projectPathPrefix, f);
-            if (pbx.ContainsFileByProjectPath(projPath))
-            {
-                var guid = pbx.FindFileGuidByProjectPath(projPath);
-                pbx.RemoveFile(guid);
-
-                Debug.LogFormat("Removed file from pbx: '{0}'", projPath);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Compares the directories. Returns files that exists in src and
-    /// extra files that exists in dest but not in src any more. 
-    /// </summary>
-    private static void CompareDirectories(string src, string dest, out string[] srcFiles, out string[] extraFiles)
-    {
-        srcFiles = GetFilesRelativePath(src);
-
-        var destFiles = GetFilesRelativePath(dest);
-        var extraFilesSet = new HashSet<string>(destFiles);
-
-        extraFilesSet.ExceptWith(srcFiles);
-        extraFiles = extraFilesSet.ToArray();
-    }
-
-    private static string[] GetFilesRelativePath(string directory)
-    {
-        var results = new List<string>();
-
-        if (Directory.Exists(directory))
-        {
-            foreach (var path in Directory.GetFiles(directory, "*", SearchOption.AllDirectories))
-            {
-                var relative = path.Substring(directory.Length).TrimStart('/');
-                results.Add(relative);
-            }
-        }
-
-        return results.ToArray();
-    }
-
-    private static bool ShouldExcludeFile(string fileName)
-    {
-        if (fileName.EndsWith(".bak", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        return false;
     }
 
     /// <summary>

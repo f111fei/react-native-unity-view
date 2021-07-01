@@ -67,7 +67,6 @@ RCT_EXPORT_METHOD(resume)
 
 - (void)onMessage:(NSString *)message {
   //if (hasListeners){
-    [_bridge.eventDispatcher sendEvent:<#(id<RCTEvent>)#> sendEvent:<#(id<RCTEvent>)#>
     [self sendEventWithName:@"onUnityMessage"
                        body:[NSString stringWithUTF8String:[message UTF8String]]];
   //}

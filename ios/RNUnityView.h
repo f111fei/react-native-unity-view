@@ -5,7 +5,7 @@
 
 @interface RNUnityView : UIView
 
-@property (nonatomic, strong) UnityView* uView;
+@property (nonatomic, strong) UIView* uView;
 
 - (void)setUnityView:(UIView *)view;
 

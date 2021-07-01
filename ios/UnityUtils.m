@@ -60,13 +60,15 @@ void InitUnity()
   
   UnityAppController* appController = [ufw appController] ;
   if (appController!= nil) {
+    [appController setUnityMessageHandler:^(const char *message) {
+      [UnityUtils onUnityMessage:message];
+    }];
     [appController window].windowLevel= UIWindowLevelNormal - 1;
   }
 }
 
 void UnityPostMessage(NSString* gameObject, NSString* methodName, NSString* message)
 {
-  NSLog(@"Sending %@ %@ %@", gameObject, methodName, message);
   dispatch_async(dispatch_get_main_queue(), ^{
     [ufw sendMessageToGOWithName:[gameObject UTF8String] functionName:[methodName UTF8String] message:[message UTF8String]];
   });
@@ -172,9 +174,8 @@ static BOOL _isUnityReady = NO;
   });
 }
 
-extern void onUnityMessage(const char* message)
++ (void)onUnityMessage:(const char*)message
 {
-  NSLog(@"Receiving: %s", message);
   for (id<UnityEventListener> listener in mUnityEventListeners) {
     [listener onMessage:[NSString stringWithUTF8String:message]];
   }

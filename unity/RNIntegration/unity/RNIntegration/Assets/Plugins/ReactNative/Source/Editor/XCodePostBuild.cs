@@ -93,7 +93,6 @@ public static class XcodePostBuild
 
         // Add Data to UnityFramework target
         var targetGuid = pbx.TargetGuidByName(UnityFrameworkTargetName);
-        var targetGuid2 = pbx.GetUnityFrameworkTargetGuid();
         var fileGuid = pbx.FindFileGuidByProjectPath("Data");
         pbx.AddFileToBuild(targetGuid, fileGuid);
 
@@ -105,35 +104,29 @@ public static class XcodePostBuild
     /// </summary>
     private static void PatchUnityNativeCode(string pathToBuiltProject)
     {
-        EditMainMM(Path.Combine(pathToBuiltProject, "Classes/main.mm"));
+        EditUnityFrameworkH(Path.Combine(pathToBuiltProject, "UnityFramework/UnityFramework.h"));
         EditUnityAppControllerH(Path.Combine(pathToBuiltProject, "Classes/UnityAppController.h"));
         EditUnityAppControllerMM(Path.Combine(pathToBuiltProject, "Classes/UnityAppController.mm"));
-
-        if (Application.unityVersion == "2017.1.1f1")
-        {
-            EditMetalHelperMM(Path.Combine(pathToBuiltProject, "Classes/Unity/MetalHelper.mm"));
-        }
-
-        // TODO: Parse unity version number and do range comparison.
-        if (Application.unityVersion.StartsWith("2017.3.0f") || Application.unityVersion.StartsWith("2017.3.1f"))
-        {
-            EditSplashScreenMM(Path.Combine(pathToBuiltProject, "Classes/UI/SplashScreen.mm"));
-        }
+        EditUnityViewMM(Path.Combine(pathToBuiltProject, "Classes/UI/UnityView.mm"));
     }
 
-    /// <summary>
-    /// Edit 'main.mm': removes 'main' entry that would conflict with the Xcode project it embeds into.
-    /// </summary>
-    private static void EditMainMM(string path)
+    private static void EditUnityFrameworkH(string path)
     {
-        EditCodeFile(path, line =>
-        {
-            if (line.TrimStart().StartsWith("int main", StringComparison.Ordinal))
-            {
-                return line.Replace("int main", "int old_main");
-            }
+        var inScope = false;
 
-            return line;
+        EditCodeFile(path, line => {
+            inScope |= line.Contains("- (void)runUIApplicationMainWithArgc:");
+
+            if (!inScope) return new string[] { line };
+            if (line.Trim() != "") return new string[] { line };
+            inScope = false;
+
+            return new string[] {
+                "",
+                "// Added by " + TouchedMarker,
+                "- (void)frameworkWarmup:(int)argc argv:(char*[])argv;",
+                ""
+            };
         });
     }
 
@@ -145,9 +138,26 @@ public static class XcodePostBuild
         var inScope = false;
         var markerDetected = false;
         var markerAdded = false;
-		
-		// Add static GetAppController
-		EditCodeFile(path, line =>
+
+        // Insert unityMessageHandler
+        EditCodeFile(path, line => {
+            inScope |= line.Contains("quitHandler)");
+
+            if (!inScope || markerDetected) return new string[] { line };
+            if (line.Trim() != "") return new string[] { line };
+            inScope = false;
+            markerDetected = true;
+
+            return new string[] {
+                "@property (nonatomic, copy)                                 void(^unityMessageHandler)(const char* message);",
+            };
+        });
+
+        inScope = false;
+        markerDetected = false;
+
+        // Add static GetAppController
+        EditCodeFile(path, line =>
         {
 			inScope |= line.Contains("- (void)startUnity:");
 
@@ -218,6 +228,9 @@ public static class XcodePostBuild
     /// </summary>
     private static void EditUnityAppControllerMM(string path)
     {
+        var inScope = false;
+        var markerDetected = false;
+
         EditCodeFile(path, line =>
         {
             if (line.Trim() == "@end")
@@ -237,104 +250,63 @@ public static class XcodePostBuild
 					"    return unityAppController;",
 					"}",
 					"",
-					line,
+                    "// Added by " + TouchedMarker,
+                    "extern \"C\" void onUnityMessage(const char* message)",
+                    "{",
+                    "    if (GetAppController().unityMessageHandler) {",
+                    "        GetAppController().unityMessageHandler(message);",
+                    "    }",
+                    "}",
+                    line,
 				};
             }
 
             return new string[] { line };
         });
-    }
 
-    /// <summary>
-    /// Edit 'MetalHelper.mm': fixes a bug (only in 2017.1.1f1) that causes crash.
-    /// </summary>
-    private static void EditMetalHelperMM(string path)
-    {
-        var markerDetected = false;
+        inScope = false;
+        markerDetected = false;
 
-        EditCodeFile(path, line =>
-        {
-            markerDetected |= line.Contains(TouchedMarker);
+        // Modify inline GetAppController
+        EditCodeFile(path, line => {
+            inScope |= line.Contains("@synthesize quitHandler");
 
-            if (!markerDetected && line.Trim() == "surface->stencilRB = [surface->device newTextureWithDescriptor: stencilTexDesc];")
-            {
-                return new string[]
-                {
-                    "",
-                    "    // Modified by " + TouchedMarker,
-                    "    // Default stencilTexDesc.usage has flag 1. In runtime it will cause assertion failure:",
-                    "    // validateRenderPassDescriptor:589: failed assertion `Texture at stencilAttachment has usage (0x01) which doesn't specify MTLTextureUsageRenderTarget (0x04)'",
-                    "    // Adding MTLTextureUsageRenderTarget seems to fix this issue.",
-                    "    stencilTexDesc.usage |= MTLTextureUsageRenderTarget;",
-                    line,
-                };
-            }
+            if (!inScope || markerDetected) return new string[] { line };
+            if (line.Trim() != "") return new string[] { line };
+            inScope = false;
+            markerDetected = true;
 
-            return new string[] { line };
+            return new string[] {
+                "@synthesize unityMessageHandler     = _unityMessageHandler;",
+            };
+
         });
     }
 
-    // TODO: Verify this is not breaking anything (check github forks and history!)
-    /// <summary>
-    /// Edit 'SplashScreen.mm': Unity introduces its own 'LaunchScreen.storyboard' since 2017.3.0f3.
-    /// Disable it here and use Swift project's launch screen instead.
-    /// </summary>
-    private static void EditSplashScreenMM(string path) {
-        var markerDetected = false;
-        var markerAdded = false;
+    private static void EditUnityViewMM(string path)
+    {
         var inScope = false;
-        var level = 0;
 
-        EditCodeFile(path, line =>
-        {
-            inScope |= line.Trim() == "void ShowSplashScreen(UIWindow* window)";
-            markerDetected |= line.Contains(TouchedMarker);
+        // Add frameworkWarmup method
+        EditCodeFile(path, line => {
+            inScope |= line.Contains("UnityGetRenderingResolution(&requestedW, &requestedH)");
 
-            if (inScope && !markerDetected)
-            {
-                if (line.Trim() == "{")
-                {
-                    level++;
-                }
-                else if (line.Trim() == "}")
-                {
-                    level--;
-                }
+            if (!inScope) return new string[] { line };
+            if (line.Trim() != "") return new string[] { line };
+            inScope = false;
 
-                if (line.Trim() == "}" && level == 0)
-                {
-                    inScope = false;
-                }
+            return new string[] {
+                "",
+                "// Added by " + TouchedMarker,
+                "        if (requestedW == 0) {",
+                "            requestedW = _surfaceSize.width;",
+                "        }",
+                "        if (requestedH == 0) {",
+                "            requestedH = _surfaceSize.height;",
+                "        }",
+                ""
+            };
 
-                if (level > 0 && line.Trim().StartsWith("bool hasStoryboard"))
-                {
-                    return new string[]
-                    {
-                        "    // " + line,
-                        "    bool hasStoryboard = false;",
-                    };
-                }
-
-                if (!markerAdded)
-                {
-                    markerAdded = true;
-                    return new string[]
-                    {
-                        "// Modified by " + TouchedMarker,
-                        line,
-                    };
-                }
-            }
-
-            return new string[] { line };
-        });
-    }
-
-    private static void EditCodeFile(string path, Func<string, string> lineHandler)
-    {
-        EditCodeFile(path, line =>
-        {
-            return new string[] { lineHandler(line) };
         });
     }
 

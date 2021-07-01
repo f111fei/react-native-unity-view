@@ -35,20 +35,20 @@ RCT_EXPORT_MODULE(UnityNativeModule);
 
 -(void)stopObserving
 {
-  hasListeners=NO;
+  hasListeners = NO;
+}
+
+- (void)onMessage:(NSString *)message {
+  if (hasListeners){
+    [self sendEventWithName:@"onUnityMessage"
+                       body:[NSString stringWithUTF8String:[message UTF8String]]];
+  }
 }
 
 RCT_EXPORT_METHOD(isReady:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
 {
   resolve(@([UnityUtils isUnityReady]));
 }
-//
-//RCT_EXPORT_METHOD(createUnity:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
-//{
-//  [UnityUtils createPlayer:^{
-//    resolve(@(YES));
-//  }];
-//}
 
 RCT_EXPORT_METHOD(postMessage:(NSString *)gameObject methodName:(NSString *)methodName message:(NSString *)message)
 {
@@ -63,13 +63,6 @@ RCT_EXPORT_METHOD(pause)
 RCT_EXPORT_METHOD(resume)
 {
   UnityResumeCommand();
-}
-
-- (void)onMessage:(NSString *)message {
-  //if (hasListeners){
-    [self sendEventWithName:@"onUnityMessage"
-                       body:[NSString stringWithUTF8String:[message UTF8String]]];
-  //}
 }
 
 @end

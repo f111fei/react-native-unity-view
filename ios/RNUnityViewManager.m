@@ -11,14 +11,11 @@ RCT_EXPORT_MODULE(RNUnityView)
 {
   self.currentView = [[RNUnityView alloc] init];
   if ([UnityUtils isUnityReady]) {
-    NSLog(@"already initialized");
     UIView* view = [[GetUnityFramework() appController] rootView];
     [self.currentView setUnityView: view];
     [self reattachView:view];
   } else {
-    NSLog(@"about to be initialized");
     [UnityUtils createPlayer:^ (UIView* view) {
-      NSLog(@"got initialized");
       [self.currentView setUnityView: view];
       [self reattachView:view];
     }];
@@ -43,23 +40,19 @@ RCT_EXPORT_MODULE(RNUnityView)
 - (void)attachView:(UIView*) unityView {
   UIView* superView = unityView.superview;
   if (superView != nil) {
-    NSLog(@"removing parent view");
     [unityView removeFromSuperview];
     [superView layoutIfNeeded];
   }
   
-  NSLog(@"adding parent view");
   [self.currentView addSubview:unityView];
 }
 
 - (void)reattachView:(UIView*) unityView{
   if (!unityView){
-    NSLog(@"not init unityview");
     return;
   }
   
   if (unityView.superview != self.currentView) {
-    NSLog(@"changing parent unityview");
     [self attachView:unityView];
   }
 }

@@ -114,7 +114,8 @@ public static class XcodePostBuild
     {
         var inScope = false;
 
-        EditCodeFile(path, line => {
+        EditCodeFile(path, line =>
+        {
             inScope |= line.Contains("- (void)runUIApplicationMainWithArgc:");
 
             if (!inScope) return new string[] { line };
@@ -140,7 +141,8 @@ public static class XcodePostBuild
         var markerAdded = false;
 
         // Insert unityMessageHandler
-        EditCodeFile(path, line => {
+        EditCodeFile(path, line =>
+        {
             inScope |= line.Contains("quitHandler)");
 
             if (!inScope || markerDetected) return new string[] { line };
@@ -159,31 +161,31 @@ public static class XcodePostBuild
         // Add static GetAppController
         EditCodeFile(path, line =>
         {
-			inScope |= line.Contains("- (void)startUnity:");
+            inScope |= line.Contains("- (void)startUnity:");
 
-			if (inScope)
-			{
-				if (line.Trim() == "")
-				{
-					inScope = false;
+            if (inScope)
+            {
+                if (line.Trim() == "")
+                {
+                    inScope = false;
 
-					return new string[]
-					{
-						"",
-						"// Added by " + TouchedMarker,
-						"+ (UnityAppController*)GetAppController;",
-						""
-					};
-				}
-			}
-			
-			return new string[] { line };
-		});
+                    return new string[]
+                    {
+                        "",
+                        "// Added by " + TouchedMarker,
+                        "+ (UnityAppController*)GetAppController;",
+                        ""
+                    };
+                }
+            }
 
-		inScope = false;
-		markerDetected = false;
+            return new string[] { line };
+        });
 
-		// Modify inline GetAppController
+        inScope = false;
+        markerDetected = false;
+
+        // Modify inline GetAppController
         EditCodeFile(path, line =>
         {
             inScope |= line.Contains("inline UnityAppController");
@@ -193,7 +195,7 @@ public static class XcodePostBuild
                 if (line.Trim() == "}")
                 {
                     inScope = false;
-					markerDetected = true;
+                    markerDetected = true;
 
                     return new string[]
                     {
@@ -236,20 +238,20 @@ public static class XcodePostBuild
             if (line.Trim() == "@end")
             {
                 return new string[]
-				{
-					"",
-					"// Added by " + TouchedMarker,
-					"static UnityAppController *unityAppController = nil;",
-					"",
-					@"+ (UnityAppController*)GetAppController",
-					"{",
-					"    static dispatch_once_t onceToken;",
-					"    dispatch_once(&onceToken, ^{",
-					"        unityAppController = [[self alloc] init];",
-					"    });",
-					"    return unityAppController;",
-					"}",
-					"",
+                {
+                    "",
+                    "// Added by " + TouchedMarker,
+                    "static UnityAppController *unityAppController = nil;",
+                    "",
+                    @"+ (UnityAppController*)GetAppController",
+                    "{",
+                    "    static dispatch_once_t onceToken;",
+                    "    dispatch_once(&onceToken, ^{",
+                    "        unityAppController = [[self alloc] init];",
+                    "    });",
+                    "    return unityAppController;",
+                    "}",
+                    "",
                     "// Added by " + TouchedMarker,
                     "extern \"C\" void onUnityMessage(const char* message)",
                     "{",
@@ -258,7 +260,7 @@ public static class XcodePostBuild
                     "    }",
                     "}",
                     line,
-				};
+                };
             }
 
             return new string[] { line };
@@ -268,7 +270,8 @@ public static class XcodePostBuild
         markerDetected = false;
 
         // Modify inline GetAppController
-        EditCodeFile(path, line => {
+        EditCodeFile(path, line =>
+        {
             inScope |= line.Contains("@synthesize quitHandler");
 
             if (!inScope || markerDetected) return new string[] { line };
@@ -288,7 +291,8 @@ public static class XcodePostBuild
         var inScope = false;
 
         // Add frameworkWarmup method
-        EditCodeFile(path, line => {
+        EditCodeFile(path, line =>
+        {
             inScope |= line.Contains("UnityGetRenderingResolution(&requestedW, &requestedH)");
 
             if (!inScope) return new string[] { line };

@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using UnityEditor;
+using UnityEditor.XR.Management;
+using UnityEditor.XR.Management.Metadata;
 using UnityEngine;
 using Application = UnityEngine.Application;
 using BuildResult = UnityEditor.Build.Reporting.BuildResult;
@@ -229,10 +231,12 @@ public static class Build
 
         CurrentGroup = BuildTargetGroup.iOS;
 
+        var xrGeneralSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(BuildTargetGroup.iOS);
         var prevCompilerConfiguration = PlayerSettings.GetIl2CppCompilerConfiguration(BuildTargetGroup.iOS);
         var prevScriptingDefines = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.iOS);
         var prev_sdkVersion = PlayerSettings.iOS.sdkVersion;
         var isDebug = !(buildType == iOSBuildType.Debug);
+        var disabledARKit = false;
 
         using var revertSettings = new Disposable(() =>
         {
@@ -245,12 +249,31 @@ public static class Build
             {
                 PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.iOS, prevScriptingDefines);
             }
+
+            if (disabledARKit)
+            {
+                XRPackageMetadataStore.AssignLoader(
+                    xrGeneralSettings.AssignedSettings,
+                    typeof(UnityEngine.XR.ARKit.ARKitLoader).FullName,
+                    BuildTargetGroup.iOS);
+            }
         });
 
         var compilerConfiguration = isDebug ? Il2CppCompilerConfiguration.Debug : Il2CppCompilerConfiguration.Master;
         PlayerSettings.SetIl2CppCompilerConfiguration(BuildTargetGroup.iOS, compilerConfiguration);
         PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.iOS, ProcessDefines(prevScriptingDefines, isDebug));
         PlayerSettings.iOS.sdkVersion = sdkVersion;
+
+        if (sdkVersion == iOSSdkVersion.SimulatorSDK
+            && xrGeneralSettings.AssignedSettings.activeLoaders.Any(m => m.GetType() == typeof(UnityEngine.XR.ARKit.ARKitLoader)))
+        {
+            // ARKit is not supported on iOS Simulator - disable it temporairly
+            XRPackageMetadataStore.RemoveLoader(
+                xrGeneralSettings.AssignedSettings,
+                typeof(UnityEngine.XR.ARKit.ARKitLoader).FullName,
+                BuildTargetGroup.iOS);
+            disabledARKit = true;
+        }
 
         string exportPath = Path.GetFullPath(Path.Combine(ProjectPath, "../../ios/UnityExport"));
         string buildPath = iosBuildPath;

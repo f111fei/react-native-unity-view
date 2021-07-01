@@ -3,7 +3,10 @@
     "rootNamespace": "",
     "references": [
         "ReactNative",
-        "Unity.XR.ARSubsystems"
+        "Unity.XR.ARKit",
+        "Unity.XR.ARSubsystems",
+        "Unity.XR.Management",
+        "Unity.XR.Management.Editor"
     ],
     "includePlatforms": [
         "Editor"

@@ -589,8 +589,7 @@ public static class TypeScriptGenerator
 
         if (b.Type == typeof(SphericalHarmonicsL2))
         {
-            b.OverrideName("2385vu239ry293nrv892y39rv");
-            b.OverrideNamespace("_");
+            b.OverrideNamespace("_ignored");
             b.Order(double.MaxValue);
         }
         else if (b.Type == typeof(Fake.UnityEngine.Rendering.SphericalHarmonicsL2))

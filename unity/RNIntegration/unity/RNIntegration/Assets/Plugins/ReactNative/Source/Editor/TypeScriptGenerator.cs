@@ -7,6 +7,7 @@ using Reinforced.Typings.Fluent;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -14,6 +15,7 @@ using System.Runtime.Serialization;
 using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.XR.ARSubsystems;
 
 namespace ReactNative
@@ -21,6 +23,40 @@ namespace ReactNative
     public interface IUnityMessage<TType, TData> { }
 
     public interface IUnityRequest<TType, TData, TResponse> { }
+}
+
+namespace Fake.UnityEngine.Rendering
+{
+    public struct SphericalHarmonicsL2
+    {
+        public float r0;
+        public float r1;
+        public float r2;
+        public float r3;
+        public float r4;
+        public float r5;
+        public float r6;
+        public float r7;
+        public float r8;
+        public float g0;
+        public float g1;
+        public float g2;
+        public float g3;
+        public float g4;
+        public float g5;
+        public float g6;
+        public float g7;
+        public float g8;
+        public float b0;
+        public float b1;
+        public float b2;
+        public float b3;
+        public float b4;
+        public float b5;
+        public float b6;
+        public float b7;
+        public float b8;
+    }
 }
 
 public static class TypeScriptGenerator
@@ -64,7 +100,7 @@ public static class TypeScriptGenerator
     {
         var allRequests = builder.Context.SourceAssemblies
             .SelectMany(m => m.GetTypes())
-            .Where(m => IsUnityRequestType(m) || IsUnityMessageType(m))
+            .Where(m => IsUnityRequestType(m) || IsUnityMessageType(m) || IsCustomMessageType(m))
             .ToArray();
 
         var allInterfaces = allRequests
@@ -175,11 +211,15 @@ public static class TypeScriptGenerator
             }
             else
             {
-                // Response
                 b.Attr.FlattenHierarchy = (b.Type.Module.Name != "GeneratedModule");
                 b.AutoI(false);
                 b.WithProperties(GetExportableProperties(b.Type), ConfigureProperty);
                 b.WithFields(GetExportableFields(b.Type), ConfigureField);
+
+                if (IsUnityType(b.Type))
+                {
+                    ConfigureUnityType(b);
+                }
             }
         });
 
@@ -194,22 +234,10 @@ public static class TypeScriptGenerator
                 typeof(Quaternion),
                 typeof(Matrix4x4),
                 typeof(Pose),
-                typeof(Plane)
+                typeof(Plane),
+                typeof(Fake.UnityEngine.Rendering.SphericalHarmonicsL2)
             },
-            (b) =>
-            {
-                b.AutoI(false);
-                b.WithFields(
-                    GetExportableFields(b.Type)
-                    .Where(m => !m.Name.StartsWith("k")));
-
-                if (b.Type != typeof(Quaternion))
-                {
-                    b.WithProperties(
-                        GetExportableProperties(b.Type)
-                        .Where(m => m.CanWrite && !m.Name.Equals("item", StringComparison.InvariantCultureIgnoreCase) && !m.IsSpecialName));
-                }
-            });
+            ConfigureUnityType);
     }
 
     public static IEnumerable<Type> ExtractUnityMessageEnums(Type requestType)
@@ -269,6 +297,10 @@ public static class TypeScriptGenerator
                     }
                 }
             }
+        }
+        else
+        {
+            yield return messageType;
         }
     }
 
@@ -455,6 +487,10 @@ public static class TypeScriptGenerator
         {
             builder.Type("number[]");
         }
+        else if (memberType == typeof(SphericalHarmonicsL2))
+        {
+            builder.Type(typeof(Fake.UnityEngine.Rendering.SphericalHarmonicsL2));
+        }
     }
 
     private static bool IsUnityRequestType(Type type, object _)
@@ -487,6 +523,16 @@ public static class TypeScriptGenerator
     private static bool IsUnityMessageType(Type type)
     {
         return type.GetTypeInfo().GetCustomAttribute<UnityMessageAttribute>() != null;
+    }
+
+    private static bool IsCustomMessageType(Type type)
+    {
+        return type.GetTypeInfo().GetCustomAttribute<CustomMessageAttribute>() != null;
+    }
+
+    private static bool IsUnityType(Type type)
+    {
+        return type.FullName.StartsWith("UnityEngine.");
     }
 
     private static bool IsSimpleType(Type type)
@@ -526,6 +572,32 @@ public static class TypeScriptGenerator
 
     private static IEnumerable<MemberInfo> GetExportableMembers(Type t)
         => GetExportableProperties(t).Cast<MemberInfo>().Union(GetExportableFields(t));
+
+    private static void ConfigureUnityType(InterfaceExportBuilder b)
+    {
+        b.AutoI(false);
+        b.WithFields(
+            GetExportableFields(b.Type)
+            .Where(m => !m.Name.StartsWith("k")));
+
+        if (b.Type != typeof(Quaternion))
+        {
+            b.WithProperties(
+                GetExportableProperties(b.Type)
+                .Where(m => m.CanWrite && !m.Name.Equals("item", StringComparison.InvariantCultureIgnoreCase) && !m.IsSpecialName));
+        }
+
+        if (b.Type == typeof(SphericalHarmonicsL2))
+        {
+            b.OverrideName("2385vu239ry293nrv892y39rv");
+            b.OverrideNamespace("_");
+            b.Order(double.MaxValue);
+        }
+        else if (b.Type == typeof(Fake.UnityEngine.Rendering.SphericalHarmonicsL2))
+        {
+            b.OverrideNamespace(typeof(SphericalHarmonicsL2).Namespace);
+        }
+    }
 
     private static class RequestTypeWrapperBuilder
     {
@@ -574,5 +646,39 @@ public static class TypeScriptGenerator
         {
             FieldBuilder _ = tb.DefineField(name, type, FieldAttributes.Public);
         }
+    }
+
+    private class FakeFieldInfo : FieldInfo
+    {
+        public FakeFieldInfo(string name, Type declaringType, Type fieldType)
+        {
+            this._Name = name;
+            this._DeclaringType = declaringType;
+            this._FieldType = fieldType;
+        }
+
+        public override FieldAttributes Attributes => _Attributes;
+        public FieldAttributes _Attributes { get; set; }
+
+        public override RuntimeFieldHandle FieldHandle => _FieldHandle;
+        public RuntimeFieldHandle _FieldHandle { get; set; }
+
+        public override Type FieldType => throw new NotImplementedException();
+        public Type _FieldType { get; set; }
+
+        public override Type DeclaringType => throw new NotImplementedException();
+        public Type _DeclaringType { get; set; }
+
+        public override string Name => _Name;
+        public string _Name { get; set; }
+
+        public override Type ReflectedType => _ReflectedType;
+        public Type _ReflectedType { get; set; }
+
+        public override object[] GetCustomAttributes(bool inherit) => Array.Empty<object>();
+        public override object[] GetCustomAttributes(Type attributeType, bool inherit) => Array.Empty<object>();
+        public override object GetValue(object obj) => default;
+        public override bool IsDefined(Type attributeType, bool inherit) => false;
+        public override void SetValue(object obj, object value, BindingFlags invokeAttr, Binder binder, CultureInfo culture) { }
     }
 }

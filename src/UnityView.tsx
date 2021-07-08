@@ -1,13 +1,13 @@
 import * as React from "react";
-import { requireNativeComponent, ViewProperties, findNodeHandle, NativeModules, NativeSyntheticEvent, View } from 'react-native';
+import { requireNativeComponent, ViewProps, View } from 'react-native';
 import * as PropTypes from "prop-types";
 const { ViewPropTypes } = require('react-native');
 import MessageHandler from "./MessageHandler";
 import { UnityModule, UnityViewMessage } from "./UnityModule";
 
-const { UIManager } = NativeModules;
+const NativeUnityView = requireNativeComponent<UnityViewProps>('UnityView');
 
-export interface UnityViewProps extends ViewProperties {
+export interface UnityViewProps extends ViewProps {
     /** 
      * Receive string message from unity. 
      */
@@ -88,5 +88,3 @@ export default class UnityView extends React.Component<UnityViewProps> {
         );
     }
 }
-
-const NativeUnityView = requireNativeComponent<UnityViewProps>('UnityView', UnityView);

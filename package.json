@@ -5,7 +5,8 @@
   "main": "out/index.js",
   "typings": "out/index.d.ts",
   "scripts": {
-    "compile": "node node_modules/typescript/bin/tsc"
+    "compile": "node node_modules/typescript/bin/tsc",
+    "windows": "react-native run-windows"
   },
   "keywords": [
     "react",
@@ -16,8 +17,10 @@
   "license": "MIT",
   "devDependencies": {
     "@types/prop-types": "^15.5.2",
-    "@types/react": "^16.0.36",
-    "@types/react-native": "^0.52.8",
-    "typescript": "^2.7.1"
+    "@types/react": "^17",
+    "@types/react-native": "^0.64.5",
+    "react-native": "0.64.1",
+    "react-native-windows": "^0.64.12",
+    "typescript": "^3.8.3"
   }
 }

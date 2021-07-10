@@ -18,7 +18,7 @@ export interface UnityViewProps extends ViewProps {
     onUnityMessage?: (handler: MessageHandler) => void;
 }
 
-export default class UnityView extends React.Component<UnityViewProps> {
+export class UnityView extends React.Component<UnityViewProps> {
     public static propTypes = {
         ...ViewPropTypes,
         onMessage: PropTypes.func
@@ -30,7 +30,7 @@ export default class UnityView extends React.Component<UnityViewProps> {
         super(props);
     }
 
-    public componentWillMount() {
+    public componentDidMount() {
         this.handle = UnityModule.addMessageListener(message => {
             if (this.props.onUnityMessage && message instanceof MessageHandler) {
                 this.props.onUnityMessage(message);

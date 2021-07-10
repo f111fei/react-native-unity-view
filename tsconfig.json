@@ -3,8 +3,8 @@
         "sourceRoot": "./src",
         "outDir": "./out",
         "moduleResolution": "node",
+        "skipLibCheck": true,
         "lib": [
-            "dom",
             "es2017"
         ],
         "jsx": "react",

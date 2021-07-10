@@ -1,4 +1,4 @@
-import UnityView from "./UnityView";
+import { UnityView } from "./UnityView";
 import { UnityModule, UnityViewMessage } from "./UnityModule";
 import MessageHandler from "./MessageHandler";
 

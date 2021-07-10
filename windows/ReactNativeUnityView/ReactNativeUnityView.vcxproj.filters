@@ -7,11 +7,15 @@
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="ReactPackageProvider.cpp" />
+    <ClCompile Include="UnityUtils.cpp" />
+    <ClCompile Include="UnityViewManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="ReactPackageProvider.h" />
-    <ClInclude Include="ReactNativeModule.h" />
+    <ClInclude Include="UnityNativeModule.h" />
+    <ClInclude Include="UnityUtils.h" />
+    <ClInclude Include="UnityViewManager.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="PropertySheet.props" />

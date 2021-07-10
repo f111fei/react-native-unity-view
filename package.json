@@ -19,8 +19,6 @@
     "@types/prop-types": "^15.5.2",
     "@types/react": "^17",
     "@types/react-native": "^0.64.5",
-    "react-native": "0.64.1",
-    "react-native-windows": "^0.64.12",
     "typescript": "^3.8.3"
   }
 }

@@ -445,7 +445,8 @@ public static class TypeScriptGenerator
                 builder.Type($"'{((FieldInfo)builder._member).GetRawConstantValue()}'");
             }
         }
-        else if (memberType == typeof(Guid) || memberType == typeof(TrackableId))
+        else if (memberType == typeof(Guid)
+            || memberType == typeof(TrackableId))
         {
             if (isLiteral)
             {
@@ -456,7 +457,8 @@ public static class TypeScriptGenerator
                 builder.Type("string");
             }
         }
-        else if (typeof(IEnumerable<Guid>).IsAssignableFrom(memberType))
+        else if (typeof(IEnumerable<Guid>).IsAssignableFrom(memberType)
+            || typeof(IEnumerable<TrackableId>).IsAssignableFrom(memberType))
         {
             builder.Type("string[]");
         }

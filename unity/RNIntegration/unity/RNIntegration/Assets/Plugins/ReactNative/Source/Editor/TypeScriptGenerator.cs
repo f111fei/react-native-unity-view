@@ -235,6 +235,8 @@ public static class TypeScriptGenerator
                 typeof(Matrix4x4),
                 typeof(Pose),
                 typeof(Plane),
+                typeof(Color),
+                typeof(Color32),
                 typeof(Fake.UnityEngine.Rendering.SphericalHarmonicsL2)
             },
             ConfigureUnityType);

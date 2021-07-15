@@ -564,16 +564,23 @@ public static class TypeScriptGenerator
         return (type.Namespace?.StartsWith("System") ?? false) || forbidden.Contains(type);
     }
 
-    private static IEnumerable<PropertyInfo> GetExportableProperties(Type t)
-        => t.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy)
-            .Where(m => m.GetType().Name.IndexOf("ignore", StringComparison.InvariantCultureIgnoreCase) < 0);
+    private static IEnumerable<PropertyInfo> GetExportableProperties(Type type)
+        => FlattenHierarchy(type).SelectMany(
+                t => t.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy)
+                      .Where(m => m.GetType().Name.IndexOf("ignore", StringComparison.InvariantCultureIgnoreCase) < 0));
 
-    private static IEnumerable<FieldInfo> GetExportableFields(Type t)
-        => t.GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.Static)
-            .Where(m => m.GetType().Name.IndexOf("ignore", StringComparison.InvariantCultureIgnoreCase) < 0);
+    private static IEnumerable<FieldInfo> GetExportableFields(Type type)
+        => FlattenHierarchy(type).SelectMany(
+                t => t.GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.Static)
+                      .Where(m => m.GetType().Name.IndexOf("ignore", StringComparison.InvariantCultureIgnoreCase) < 0));
 
     private static IEnumerable<MemberInfo> GetExportableMembers(Type t)
         => GetExportableProperties(t).Cast<MemberInfo>().Union(GetExportableFields(t));
+
+    private static IEnumerable<Type> FlattenHierarchy(Type t)
+        => t.IsInterface
+        ? t.GetInterfaces().Append(t)
+        : Enumerable.Empty<Type>().Append(t);
 
     private static void ConfigureUnityType(InterfaceExportBuilder b)
     {

@@ -99,6 +99,14 @@ public static class TypeScriptGenerator
 
     public static void Configure(ConfigurationBuilder builder)
     {
+        builder.Substitute(typeof(JToken), new RtSimpleTypeName("any"));
+        builder.Substitute(typeof(Guid), new RtSimpleTypeName("string"));
+        builder.Substitute(typeof(TrackableId), new RtSimpleTypeName("string"));
+        builder.Substitute(typeof(Uri), new RtSimpleTypeName("string"));
+        builder.Substitute(typeof(DateTime), new RtSimpleTypeName("number"));
+        builder.Substitute(typeof(DateTimeOffset), new RtSimpleTypeName("number"));
+        builder.Substitute(typeof(TimeSpan), new RtSimpleTypeName("number"));
+
         var allRequests = builder.Context.SourceAssemblies
             .SelectMany(m => m.GetTypes())
             .Where(m => IsUnityRequestType(m) || IsUnityMessageType(m) || IsCustomMessageType(m))
@@ -437,11 +445,7 @@ public static class TypeScriptGenerator
 
     public static void ConfigureMemberType(Type memberType, MemberExportBuilder builder, bool isLiteral = false)
     {
-        if (typeof(JToken).IsAssignableFrom(memberType))
-        {
-            builder.Type($"any");
-        }
-        else if (isLiteral)
+        if (isLiteral)
         {
             if (memberType.IsPrimitive)
             {
@@ -451,50 +455,6 @@ public static class TypeScriptGenerator
             {
                 builder.Type($"'{((FieldInfo)builder._member).GetRawConstantValue()}'");
             }
-        }
-        else if (memberType == typeof(Guid)
-            || memberType == typeof(TrackableId))
-        {
-            if (isLiteral)
-            {
-                builder.Type($"'{((FieldInfo)builder._member).GetRawConstantValue()}'");
-            }
-            else
-            {
-                builder.Type("string");
-            }
-        }
-        else if (typeof(IEnumerable<Guid>).IsAssignableFrom(memberType)
-            || typeof(IEnumerable<TrackableId>).IsAssignableFrom(memberType))
-        {
-            builder.Type("string[]");
-        }
-        else if (memberType == typeof(Uri))
-        {
-            if (isLiteral)
-            {
-                builder.Type($"'{((FieldInfo)builder._member).GetRawConstantValue()}'");
-            }
-            else
-            {
-                builder.Type("string");
-            }
-        }
-        else if (typeof(IEnumerable<Uri>).IsAssignableFrom(memberType))
-        {
-            builder.Type("string[]");
-        }
-        else if (memberType == typeof(DateTime)
-            || memberType == typeof(DateTimeOffset)
-            || memberType == typeof(TimeSpan))
-        {
-            builder.Type("number");
-        }
-        else if (typeof(IEnumerable<DateTime>).IsAssignableFrom(memberType)
-            || typeof(IEnumerable<DateTimeOffset>).IsAssignableFrom(memberType)
-            || typeof(IEnumerable<TimeSpan>).IsAssignableFrom(memberType))
-        {
-            builder.Type("number[]");
         }
         else if (memberType == typeof(SphericalHarmonicsL2))
         {

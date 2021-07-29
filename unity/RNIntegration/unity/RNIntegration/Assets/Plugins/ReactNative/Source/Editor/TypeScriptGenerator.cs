@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using ReactNative;
 using Reinforced.Typings;
 using Reinforced.Typings.Ast.TypeNames;
@@ -436,7 +437,11 @@ public static class TypeScriptGenerator
 
     public static void ConfigureMemberType(Type memberType, MemberExportBuilder builder, bool isLiteral = false)
     {
-        if (isLiteral)
+        if (typeof(JToken).IsAssignableFrom(memberType))
+        {
+            builder.Type($"any");
+        }
+        else if (isLiteral)
         {
             if (memberType.IsPrimitive)
             {

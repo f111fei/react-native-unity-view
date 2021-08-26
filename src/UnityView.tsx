@@ -2,9 +2,9 @@ import * as React from "react";
 import { NativeModules, requireNativeComponent, ViewProps, View } from 'react-native';
 import * as PropTypes from "prop-types";
 const { ViewPropTypes } = require('react-native');
-import { UnityMessageHandler, UnityMessageHandlerImpl } from "./UnityMessageHandler";
+import { UnityRequestHandler, UnityRequestHandlerImpl } from "./UnityRequestHandler";
 import { UnityModule } from "./UnityModule";
-import { UnityMessageType, UnityMessage } from "./UnityMessage";
+import { UnityMessageType, UnityMessage, UnityMessageImpl } from "./UnityMessage";
 import { IUnityRequest } from "./UnityRequest";
 import { Observable } from "rxjs";
 
@@ -17,9 +17,14 @@ export interface UnityViewProps extends ViewProps {
     onMessage?: (message: string) => void;
 
     /** 
-    * Receive JSON message or request from unity. 
-    */
-    onUnityMessage?: (handler: UnityMessageHandler) => void;
+     * Receive JSON message from unity. 
+     */
+    onUnityMessage?: (message: UnityMessage) => void;
+
+    /** 
+     * Receive JSON request from unity. 
+     */
+    onUnityRequest?: (handler: UnityRequestHandler) => void;
 }
 
 export default class UnityView extends React.Component<UnityViewProps> {
@@ -34,11 +39,18 @@ export default class UnityView extends React.Component<UnityViewProps> {
         super(props);
 
         this.m_registrationToken = UnityModule.addMessageListener(message => {
-            if (this.props.onUnityMessage && message instanceof UnityMessageHandlerImpl) {
-                this.props.onUnityMessage(message);
-            }
-            if (this.props.onMessage && typeof message === 'string') {
-                this.props.onMessage(message);
+            if (message instanceof UnityMessageImpl) {
+                if (this.props.onUnityMessage) {
+                    this.props.onUnityMessage(message);
+                }
+            } else if (message instanceof UnityRequestHandlerImpl) {
+                if (this.props.onUnityRequest) {
+                    this.props.onUnityRequest(message);
+                }
+            } else if (typeof message === 'string') {
+                if (this.props.onMessage) {
+                    this.props.onMessage(message);
+                }
             }
         });
     }
@@ -85,8 +97,6 @@ export default class UnityView extends React.Component<UnityViewProps> {
             <View {...props}>
                 <NativeUnityView
                     style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}
-                    onUnityMessage={onUnityMessage}
-                    onMessage={onMessage}
                 >
                 </NativeUnityView>
                 {this.props.children}

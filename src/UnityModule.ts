@@ -1,6 +1,6 @@
 import { NativeModules } from 'react-native';
 import { UnityMessage, UnityMessageImpl, UnityMessagePrefix, UnityMessageType } from "./UnityMessage";
-import { UnityMessageHandler, UnityMessageHandlerImpl } from "./UnityMessageHandler";
+import { UnityRequestHandler, UnityRequestHandlerImpl } from "./UnityRequestHandler";
 import { Observable, Subscriber, TeardownLogic } from 'rxjs';
 import { IUnityRequest } from './UnityRequest';
 import UnityEventEmitter from './UnityEventEmitter';
@@ -27,7 +27,7 @@ const removeResponseCallback = function (uuid: number | string) {
 }
 
 const requestCallbackMessageMap: {
-    [uuid: number]: UnityMessageHandlerImpl;
+    [uuid: number]: UnityRequestHandlerImpl;
 } = {};
 const removeRequestCallback = function (uuid: number | string) {
     if (requestCallbackMessageMap[uuid]) {
@@ -67,13 +67,13 @@ export interface UnityModule {
      */
     postMessageAsync<TResponse = any, TType extends number = UnityMessageType>(id: string, data: any, gameObject?: string, methodName?: string): Observable<TResponse>;
     /**
-    * Send Message to UnityMessageManager.
-    * @param id The request target ID to post.
-    * @param type The custom request type to post.
-    * @param data The request data to post.
-    * @param gameObject (optional) The Name of GameObject. Also can be a path string.
-    * @param methodName (optional) Method name in GameObject instance.
-    */
+     * Send Message to UnityMessageManager.
+     * @param id The request target ID to post.
+     * @param type The custom request type to post.
+     * @param data The request data to post.
+     * @param gameObject (optional) The Name of GameObject. Also can be a path string.
+     * @param methodName (optional) Method name in GameObject instance.
+     */
     postMessageAsync<TResponse = any, TType extends number = UnityMessageType>(id: string, type: TType, data: any, gameObject?: string, methodName?: string): Observable<TResponse>;
     /**
      * Pause the unity player
@@ -86,7 +86,7 @@ export interface UnityModule {
     /**
      * Receive string and json message from unity.
      */
-    addMessageListener(listener: (message: string | UnityMessageHandler) => void): number;
+    addMessageListener(listener: (messageOrHandler: string | UnityMessage | UnityRequestHandler) => void): number;
     /**
      * Only receive string message from unity.
      */
@@ -94,7 +94,11 @@ export interface UnityModule {
     /**
      * Only receive json message from unity.
      */
-    addUnityMessageListener(listener: (handler: UnityMessageHandler) => void): number;
+    addUnityMessageListener(listener: (message: UnityMessage) => void): number;
+    /**
+     * Only receive json request from unity.
+     */
+    addUnityRequestListener(listener: (handler: UnityRequestHandler) => void): number;
     /**
      * Remove message listener.
      */
@@ -117,7 +121,10 @@ class UnityModuleImpl implements UnityModule {
         [hid: number]: (message: string) => void
     }
     private unityMessageListeners: {
-        [hid: number]: (message: UnityMessageHandler) => void
+        [hid: number]: (message: UnityMessage) => void
+    }
+    private unityRequestListeners: {
+        [hid: number]: (handler: UnityRequestHandler) => void
     }
 
     public constructor() {
@@ -127,15 +134,20 @@ class UnityModuleImpl implements UnityModule {
     private createListeners() {
         this.stringListeners = {};
         this.unityMessageListeners = {};
+        this.unityRequestListeners = {};
         UnityEventEmitter.addListener('onUnityMessage', (message) => {
             const result = this.handleMessage(message);
             if (result) {
-                if (typeof result === 'string') {
-                    Object.values(this.stringListeners).forEach(listener => {
+                if (result instanceof UnityMessageImpl) {
+                    Object.values(this.unityMessageListeners).forEach(listener => {
                         listener(result);
                     });
-                } else {
-                    Object.values(this.unityMessageListeners).forEach(listener => {
+                } else if (result instanceof UnityRequestHandlerImpl) {
+                    Object.values(this.unityRequestListeners).forEach(listener => {
+                        listener(result);
+                    });
+                } else if (typeof result === 'string') {
+                    Object.values(this.stringListeners).forEach(listener => {
                         listener(result);
                     });
                 }
@@ -199,13 +211,13 @@ class UnityModuleImpl implements UnityModule {
      */
     public postMessageAsync<TResponse = any, TType extends number = UnityMessageType>(id: string, data: any, gameObject?: string, methodName?: string): Observable<TResponse>;
     /**
-    * Send Message to UnityMessageManager.
-    * @param id The request target ID to post.
-    * @param type The custom request type to post.
-    * @param data The request data to post.
-    * @param gameObject (optional) The Name of GameObject. Also can be a path string.
-    * @param methodName (optional) Method name in GameObject instance.
-    */
+     * Send Message to UnityMessageManager.
+     * @param id The request target ID to post.
+     * @param type The custom request type to post.
+     * @param data The request data to post.
+     * @param gameObject (optional) The Name of GameObject. Also can be a path string.
+     * @param methodName (optional) Method name in GameObject instance.
+     */
     public postMessageAsync<TResponse = any, TType extends number = UnityMessageType>(id: string, type: TType, data: any, gameObject?: string, methodName?: string): Observable<TResponse>;
     public postMessageAsync<TResponse = any, TType extends number = UnityMessageType, TData = any>(first: string | IUnityRequest<TType, TData, TResponse>, second: any, third: any, fourth?: string, fifth?: string): Observable<TResponse> {
         var id: string;
@@ -246,12 +258,12 @@ class UnityModuleImpl implements UnityModule {
         }
 
         return new Observable<TResponse>((subscriber: Subscriber<TResponse>): TeardownLogic => {
-            var isCompleted: boolean = false;
+            let isCompleted: boolean = false;
             const uuid = generateUuid();
             responseCallbackMessageMap[uuid] = {
                 id: id,
                 onNext: (response: UnityMessage) => {
-                    var data = response.data as TResponse;
+                    const data = response.data as TResponse;
 
                     if(__DEBUG_UNITY_VIEW__) {
                         console.log(`RESPONSE ${uuid}: ${JSON.stringify(data)}`);
@@ -278,13 +290,6 @@ class UnityModuleImpl implements UnityModule {
                 return;
             }
 
-            this.postMessageInternal(gameObject, methodName, UnityMessagePrefix + JSON.stringify({
-                id: id,
-                type: type,
-                uuid: uuid,
-                data: data
-            }));
-
             if(__DEBUG_UNITY_VIEW__) {
                 console.log(`REQUEST ${uuid}: ${JSON.stringify({
                     id: id,
@@ -292,6 +297,13 @@ class UnityModuleImpl implements UnityModule {
                     data: data
                 })}`);
             }
+
+            this.postMessageInternal(gameObject, methodName, UnityMessagePrefix + JSON.stringify({
+                id: id,
+                type: type,
+                uuid: uuid,
+                data: data
+            }));
 
             // Return cancellation handler
             return () => {
@@ -316,10 +328,11 @@ class UnityModuleImpl implements UnityModule {
         UnityNativeModule.resume();
     }
 
-    public addMessageListener(listener: (handler: string | UnityMessageHandler) => void): number {
+    public addMessageListener(listener: (messageOrHandler: string | UnityMessage | UnityRequestHandler) => void): number {
         const id = this.getHandleId();
         this.stringListeners[id] = listener;
         this.unityMessageListeners[id] = listener;
+        this.unityRequestListeners[id] = listener;
         return id;
     }
 
@@ -329,13 +342,22 @@ class UnityModuleImpl implements UnityModule {
         return id;
     }
 
-    public addUnityMessageListener(listener: (handler: UnityMessageHandler) => void): number {
+    public addUnityMessageListener(listener: (message: UnityMessage) => void): number {
         const id = this.getHandleId();
         this.unityMessageListeners[id] = listener;
         return id;
     }
 
+    public addUnityRequestListener(listener: (handler: UnityRequestHandler) => void): number {
+        const id = this.getHandleId();
+        this.unityRequestListeners[id] = listener;
+        return id;
+    }
+
     public removeMessageListener(registrationToken: number) {
+        if (this.unityRequestListeners[registrationToken]) {
+            delete this.unityRequestListeners[registrationToken];
+        }
         if (this.unityMessageListeners[registrationToken]) {
             delete this.unityMessageListeners[registrationToken];
         }
@@ -345,8 +367,8 @@ class UnityModuleImpl implements UnityModule {
     }
 
     public clear() {
-        for (var key in requestCallbackMessageMap) {
-            let awaitEntry = requestCallbackMessageMap[key];
+        for (const key in requestCallbackMessageMap) {
+            const awaitEntry = requestCallbackMessageMap[key];
             removeRequestCallback(key);
             if (awaitEntry && awaitEntry.close) {
                 awaitEntry.close();
@@ -354,8 +376,8 @@ class UnityModuleImpl implements UnityModule {
         }
 
         // Cancel all subscription
-        for (var key in responseCallbackMessageMap) {
-            let awaitEntry = responseCallbackMessageMap[key];
+        for (const key in responseCallbackMessageMap) {
+            const awaitEntry = responseCallbackMessageMap[key];
             removeResponseCallback(key);
             if (awaitEntry && awaitEntry.onCanceled) {
                 awaitEntry.onCanceled();
@@ -363,23 +385,32 @@ class UnityModuleImpl implements UnityModule {
         }
     }
 
-    private handleMessage(message: string): string | UnityMessageHandler | undefined {
+    private handleMessage(message: string): string | UnityMessage | UnityRequestHandler | undefined {
         if (UnityMessageImpl.isUnityMessage(message)) {
-            var unityMessage = new UnityMessageImpl(message);
+            const unityMessage = new UnityMessageImpl(message);
             if (unityMessage.isRequestCompletion()) {
                 // handle callback message
                 const awaitEntry = responseCallbackMessageMap[unityMessage.uuid];
                 if (awaitEntry) {
                     removeResponseCallback(unityMessage.uuid);
                     if (unityMessage.isResponse()) {
+                        if (__DEBUG_UNITY_VIEW__) {
+                            console.log(`RESPONSE ${unityMessage.uuid}` + message.substr(UnityMessagePrefix.length));
+                        }
                         if (awaitEntry.onNext) {
                             awaitEntry.onNext(unityMessage);
                         }
                     } else if (unityMessage.isError()) {
+                        if (__DEBUG_UNITY_VIEW__) {
+                            console.log(`FAILED ${unityMessage.uuid}` + message.substr(UnityMessagePrefix.length));
+                        }
                         if (awaitEntry.onError) {
                             awaitEntry.onError(unityMessage);
                         }
                     } else if (unityMessage.isCanceled()) {
+                        if (__DEBUG_UNITY_VIEW__) {
+                            console.log(`CANCELED ${unityMessage.uuid}`);
+                        }
                         if (awaitEntry.onCanceled) {
                             awaitEntry.onCanceled();
                         }
@@ -393,7 +424,7 @@ class UnityModuleImpl implements UnityModule {
                 }
             } else if (unityMessage.isCancel()) {
                 if (__DEBUG_UNITY_VIEW__) {
-                    console.log(`CANCELED ${unityMessage.uuid}`);
+                    console.log(`CANCEL ${unityMessage.uuid}`);
                 }
                 const handler = requestCallbackMessageMap[unityMessage.uuid];
                 if (handler && handler.cancel) {
@@ -401,23 +432,30 @@ class UnityModuleImpl implements UnityModule {
                 }
             } else {
                 if (__DEBUG_UNITY_VIEW__) {
-                    console.log("GENERAL" + message.substr(UnityMessagePrefix.length));
+                    if (unityMessage.isRequest()) {
+                        console.log("INCOMMING REQUEST" + message.substr(UnityMessagePrefix.length));
+                    } else {
+                        console.log("GENERAL" + message.substr(UnityMessagePrefix.length));
+                    }
                 }
 
-                if (Object.keys(this.unityMessageListeners).length > 0) {
-                    const handler = new UnityMessageHandlerImpl(
-                      unityMessage as UnityMessageImpl,
-                      removeRequestCallback);
-                    if (handler.isRequest) {
+                if (unityMessage.isRequest()) {
+                    if (Object.keys(this.unityRequestListeners).length > 0) {
+                        const handler = new UnityRequestHandlerImpl(
+                            unityMessage as UnityMessageImpl,
+                            removeRequestCallback);
                         requestCallbackMessageMap[unityMessage.uuid] = handler;
+                        return handler;
                     }
-
-                    return handler;
+                } else {
+                    if (Object.keys(this.unityMessageListeners).length > 0) {
+                        return unityMessage;
+                    }
                 }
             }
         } else {
             if (__DEBUG_UNITY_VIEW__) {
-                console.log('Received: ' + message);
+                console.log('TEXT: ' + message);
             }
 
             return message;

@@ -24,6 +24,8 @@ namespace ReactNative
     public interface IUnityMessage<TType, TData> { }
 
     public interface IUnityRequest<TType, TData, TResponse> { }
+
+    public interface IUnityReverseRequest<TType, TData, TResponse> { }
 }
 
 namespace Fake.UnityEngine.Rendering
@@ -109,7 +111,7 @@ public static class TypeScriptGenerator
 
         var allRequests = builder.Context.SourceAssemblies
             .SelectMany(m => m.GetTypes())
-            .Where(m => IsUnityRequestType(m) || IsUnityMessageType(m) || IsCustomMessageType(m))
+            .Where(m => IsUnityRequestType(m) || IsUnityReverseRequestType(m) || IsUnityMessageType(m) || IsCustomMessageType(m))
             .ToArray();
 
         var allInterfaces = allRequests
@@ -126,13 +128,14 @@ public static class TypeScriptGenerator
             new[]
             {
                 typeof(IUnityMessage<,>),
-                typeof(IUnityRequest<,,>)
+                typeof(IUnityRequest<,,>),
+                typeof(IUnityReverseRequest<,,>)
             },
             (c) =>
             {
                 c.Imports(new Reinforced.Typings.Ast.Dependency.RtImport()
                 {
-                    Target = "{ IUnityRequest, IUnityMessage }",
+                    Target = "{ IUnityRequest, IUnityReverseRequest, IUnityMessage }",
                     From = "react-native-unity-view"
                 });
             });
@@ -161,6 +164,7 @@ public static class TypeScriptGenerator
                     {
                         case "id":
                             var attrID = requestDataType.GetTypeInfo().GetCustomAttribute<UnityRequestAttribute>()?.Id
+                                ?? requestDataType.GetTypeInfo().GetCustomAttribute<UnityReverseRequestAttribute>()?.Id
                                 ?? requestDataType.GetTypeInfo().GetCustomAttribute<UnityMessageAttribute>()?.Id;
                             field.Type($"\"{attrID}\"");
                             break;
@@ -200,6 +204,15 @@ public static class TypeScriptGenerator
                     var tInterface = typeof(IUnityRequest<,,>).MakeGenericType(tType, tData, tResponse);
                     b.Attr.Implementees.Add(tInterface);
                 }
+                else if (IsUnityReverseRequestType(requestDataType))
+                {
+                    var i = requestDataType.FindInterfaces(IsUnityReverseRequestType, null).OrderByDescending(m => m.GenericTypeArguments.Length).First();
+                    var tType = i.GenericTypeArguments.Skip(0).FirstOrDefault() ?? typeof(int);
+                    var tResponse = i.GenericTypeArguments.Skip(1).FirstOrDefault() ?? typeof(object);
+                    var tData = i.GenericTypeArguments.Skip(2).FirstOrDefault() ?? requestDataType;
+                    var tInterface = typeof(IUnityReverseRequest<,,>).MakeGenericType(tType, tData, tResponse);
+                    b.Attr.Implementees.Add(tInterface);
+                }
                 else
                 {
                     var i = requestDataType.FindInterfaces(IsUnityMessageType, null).OrderByDescending(m => m.GenericTypeArguments.Length).First();
@@ -209,7 +222,7 @@ public static class TypeScriptGenerator
                     b.Attr.Implementees.Add(tInterface);
                 }
             }
-            else if (IsUnityRequestType(b.Type) || IsUnityMessageType(b.Type))
+            else if (IsUnityRequestType(b.Type) || IsUnityReverseRequestType(b.Type) || IsUnityMessageType(b.Type))
             {
                 // Request
                 b.Attr.FlattenHierarchy = true;
@@ -259,6 +272,12 @@ public static class TypeScriptGenerator
             yield return attr[0].GenericTypeArguments[0];
         }
 
+        attr = requestType.FindInterfaces(IsUnityReverseRequestType, null);
+        if (attr.Length > 0)
+        {
+            yield return attr[0].GenericTypeArguments[0];
+        }
+
         attr = requestType.FindInterfaces(IsUnityMessageType, null);
         if (attr.Length > 0)
         {
@@ -268,7 +287,7 @@ public static class TypeScriptGenerator
 
     public static IEnumerable<Type> ExtractUnityMessageInterfaces(Type messageType)
     {
-        if (IsUnityRequestType(messageType) || IsUnityMessageType(messageType))
+        if (IsUnityRequestType(messageType) || IsUnityReverseRequestType(messageType) || IsUnityMessageType(messageType))
         {
             var attr = messageType.GetTypeInfo().GetCustomAttribute<UnityRequestAttribute>();
             var requestInstance = Activator.CreateInstance(messageType, true);
@@ -295,6 +314,21 @@ public static class TypeScriptGenerator
             }
 
             foreach (var requestInterface in messageType.FindInterfaces(IsUnityRequestType, null))
+            {
+                if (!requestInterface.IsGenericType) { continue; }
+
+                if (requestInterface.GenericTypeArguments.Length > 1)
+                {
+                    var responseType = requestInterface.GenericTypeArguments[1];
+
+                    foreach (var t in ExtractTypesFromGeneric(responseType))
+                    {
+                        yield return t;
+                    }
+                }
+            }
+
+            foreach (var requestInterface in messageType.FindInterfaces(IsUnityReverseRequestType, null))
             {
                 if (!requestInterface.IsGenericType) { continue; }
 
@@ -476,6 +510,22 @@ public static class TypeScriptGenerator
     private static bool IsUnityRequestType(Type type)
     {
         return type.GetTypeInfo().GetCustomAttribute<UnityRequestAttribute>() != null;
+    }
+
+    private static bool IsUnityReverseRequestType(Type type, object _)
+    {
+        bool IsRequest(Type genericType)
+        {
+            return genericType == typeof(IUnityReverseRequest<>) || genericType == typeof(IUnityReverseRequest<,>);
+        }
+
+        return type.IsGenericType
+            && IsRequest(type.GetGenericTypeDefinition());
+    }
+
+    private static bool IsUnityReverseRequestType(Type type)
+    {
+        return type.GetTypeInfo().GetCustomAttribute<UnityReverseRequestAttribute>() != null;
     }
 
     private static bool IsUnityMessageType(Type type, object _)

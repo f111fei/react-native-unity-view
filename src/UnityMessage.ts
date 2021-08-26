@@ -85,4 +85,8 @@ export class UnityMessageImpl implements UnityMessage {
             return false;
         }
     }
+
+    public processResponse(response: any): any {
+        return response;
+    }
 }
